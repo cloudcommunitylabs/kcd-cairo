@@ -103,10 +103,13 @@ anyone who has worked on that repo recognises it.
   "dateLabel": "Date to be announced",
   "siteUrl": "https://kcdcairo.com",
   "links": {
-    "linkedin": "",
+    "linkedin": "https://www.linkedin.com/company/kcd-cairo",
     "x": "",
-    "contactEmail": "",
-    "newsletter": ""
+    "contactEmail": ""
+  },
+  "newsletter": {
+    "constantContactFormId": "a539b1a8-b115-4dec-9f68-e4b018488b17",
+    "constantContactAccountId": ""
   },
   "program": {
     "kcd": "https://kubernetescommunitydays.org/",
@@ -122,13 +125,39 @@ can contradict each other, and on a page with three optional CTAs the flags earn
 nothing. Consequence: the page is safe to ship with blanks, and filling a CTA
 later is a one-file edit with no code change.
 
-All four `links` values are literal strings used verbatim:
+The three `links` values are literal strings used verbatim:
 
 - `linkedin`, `x` — full profile URLs, not handles.
 - `contactEmail` — a bare address; the page prefixes `mailto:`.
-- `newsletter` — a URL (Google Form, Mailchimp hosted page, Buttondown page),
-  not an API endpoint. It renders as a link, so no form handler, no CORS, no
-  secret.
+
+### Newsletter — embedded Constant Contact form
+
+The organisers use a Constant Contact **inline form**, not a hosted signup URL,
+so this is an embedded third-party form rather than a link. Verified against the
+live loader at
+`https://static.ctctcdn.com/js/signup-form-widget/current/signup-form-widget.min.js`:
+
+- The loader locates the target via `.ctct-inline-form[data-form-id="<id>"]`, so
+  the class and attribute must be exactly that.
+- The loader reads `window._ctct_m`. Without it, it aborts with its own message:
+  `"_ctct_m". Please copy paste universal code from account again.` A bare div
+  renders nothing.
+- The loader does **not** depend on the `id="signupScript"` attribute in
+  Constant Contact's copy-paste snippet, so that id is not reproduced.
+
+`constantContactAccountId` is the `_ctct_m` value from the account's universal
+code. The embed renders **only when both** `constantContactFormId` and
+`constantContactAccountId` are non-empty — a form ID alone would render a
+permanently empty div, which is worse than no form.
+
+`_ctct_m` is assigned via a `<script>` in Gatsby's `Head` so it is defined before
+hydration; the loader is then injected with Gatsby's `<Script strategy="idle">`
+so it never blocks first paint. Ordering is guaranteed by that split, not by luck.
+
+This introduces a third-party script that sets cookies. It is what the
+organisers asked for and is standard for a launch-notification page, but it is
+called out here rather than shipped silently, and consent handling is listed as
+a follow-up.
 
 ### `src/pages/index.js` — the page
 
@@ -137,9 +166,14 @@ Sections, top to bottom:
 1. Official CNCF KCD horizontal mark.
 2. `city` set large, `year` treated as a distinct element.
 3. "Coming {year}" plus `dateLabel`.
-4. CTA row — LinkedIn, X, email, newsletter; each conditional on its value.
-5. Footer — ties the event to the CNCF KCD program, links `program.kcd` and
+4. Newsletter — the Constant Contact inline form, when configured.
+5. CTA row — LinkedIn, X, email; each conditional on its value.
+6. Footer — ties the event to the CNCF KCD program, links `program.kcd` and
    `program.cncf`, shows the current year.
+
+If neither the newsletter nor any link is configured, sections 4 and 5 collapse
+entirely and the page is branding-only. The layout must not leave a gap or an
+empty bordered region in that state.
 
 Uses Gatsby's Head API for `<title>`, meta description, canonical URL from
 `siteUrl`, Open Graph and Twitter card tags, and an SVG favicon link. No
@@ -160,12 +194,20 @@ Requirements: responsive from 320px up, `prefers-reduced-motion` respected on
 any transition, and text/background contrast meeting WCAG AA (4.5:1 body,
 3:1 large text). Contrast is checked against the final values, not assumed.
 
-### `src/images/kcd-logo-color.svg` — brand mark
+### `src/images/kcd-logo-white.svg` — brand mark
 
 The official mark from
-`cncf/artwork/other/kubernetes-community-days/horizontal/color/kcd-logo-color.svg`.
-CNCF artwork is CC-BY 4.0 and KCD organisers are its intended users. Committed
-to the repo rather than hotlinked, so the build has no network dependency.
+`cncf/artwork/other/kubernetes-community-days/horizontal/white/kcd-logo-white.svg`.
+The **white** variant, not `color` — the ground is dark, and CNCF ships the white
+variant for exactly this case. CNCF artwork is CC-BY 4.0 and KCD organisers are
+its intended users. Committed to the repo rather than hotlinked, so the build has
+no network dependency.
+
+Only a horizontal lockup exists (870×280); there is no square KCD mark in
+`cncf/artwork`. A favicon is therefore a follow-up rather than a squashed
+horizontal logo. The repo's existing `static/img/favicon.png` is OCP's, but it
+sits at `/img/favicon.png` rather than `/favicon.ico`, so no OCP branding leaks
+by leaving it in place.
 
 ### `static/CNAME` — `kcdcairo.com`
 
@@ -233,7 +275,10 @@ Evidence required before the PR is opened, in this order:
    `onPreBootstrap` entry — confirming the theme is genuinely out of the graph.
 5. Every non-empty URL in `event-data.json` resolves (HTTP 2xx/3xx). Empty
    values are skipped.
-6. `yarn install --frozen-lockfile` succeeds against the committed `yarn.lock`
+6. If `constantContactAccountId` is set, `public/index.html` contains both the
+   `ctct-inline-form` div carrying the form ID and the `_ctct_m` assignment. If
+   it is empty, it contains neither — no orphan div.
+7. `yarn install --frozen-lockfile` succeeds against the committed `yarn.lock`
    after `package.json` gains `react`/`react-dom` — CI uses this exact command,
    so a stale lockfile would only surface in CI.
 
@@ -241,7 +286,12 @@ No claim of completion is made on a green exit code alone.
 
 ## Out of scope, worth a follow-up
 
-- Populating the CTA values in `event-data.json`.
+- Supplying `constantContactAccountId` (the `_ctct_m` value from the Constant
+  Contact account's universal code). Until it lands, the signup form does not
+  render.
+- Cookie-consent handling for the Constant Contact script. Relevant for an
+  international audience under GDPR; not required to ship a holding page.
+- Populating the remaining CTA values (`x`, `contactEmail`) in `event-data.json`.
 - Adding the custom domain to the Cloudflare Pages project.
 - A branded `src/pages/404.js`. Without it Gatsby emits no `404.html` and
   Cloudflare Pages serves its own generic 404. Acceptable for a one-page holding
