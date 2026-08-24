@@ -203,8 +203,13 @@ Expected: build exits 0, then `PASS: build output verified`.
 
 - [ ] **Step 9: Confirm the theme is genuinely out of the graph**
 
-Run: `yarn build 2>&1 | grep -iE 'onPreBootstrap|openeventkit|fnvirtual|simple-oauth2' || echo "CLEAN: no theme activity"`
+Run: `yarn build 2>&1 | grep -iE 'openeventkit|fnvirtual|simple-oauth2|ValidationError' || echo "CLEAN: no theme activity"`
 Expected: `CLEAN: no theme activity`.
+
+Do **not** grep for `onPreBootstrap`: Gatsby core logs that lifecycle name on
+every build regardless of which plugins are active, so it matches always and
+proves nothing. The four patterns above are theme-specific — a live theme
+produces all of them.
 
 - [ ] **Step 10: Commit**
 
@@ -1389,7 +1394,7 @@ output. No completion claim on a green exit code alone.
 - [ ] `rm -rf public .cache && yarn build` exits 0
 - [ ] `bash scripts/verify-build.sh` prints `PASS`
 - [ ] `node scripts/check-contrast.mjs` prints `All contrast checks pass`
-- [ ] `yarn build 2>&1 | grep -iE 'onPreBootstrap|simple-oauth2|fnvirtual'` finds nothing
+- [ ] `yarn build 2>&1 | grep -iE 'openeventkit|fnvirtual|simple-oauth2|ValidationError'` finds nothing (not `onPreBootstrap` — Gatsby core logs that name unconditionally)
 - [ ] `ls public/` contains `index.html` and no `registration/`, `travel/`, `faq/`
 - [ ] Every non-empty URL in `event-data.json` returns 2xx/3xx:
       `node -e 'const d=require("./src/content/event-data.json");const u=[...Object.values(d.links),...Object.values(d.program)].filter(v=>v&&v.startsWith("http"));Promise.all(u.map(x=>fetch(x,{method:"HEAD",redirect:"follow"}).then(r=>console.log(r.status,x)).catch(e=>console.log("ERR",x,e.message))))'`
