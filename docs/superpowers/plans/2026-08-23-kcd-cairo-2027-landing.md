@@ -320,8 +320,24 @@ test("preserves definition order regardless of config key order", () => {
 Add to `scripts`:
 
 ```json
-    "test": "node --test src/",
+    "test": "node --test",
 ```
+
+Bare `node --test`, with no path argument. Measured across the two Node majors
+in play:
+
+| Invocation | Node 20.8.0 | Node 22.22.2 |
+| --- | --- | --- |
+| `node --test src/` | passes | `MODULE_NOT_FOUND` |
+| `node --test src/content/` | passes | `MODULE_NOT_FOUND` |
+| `node --test "src/**/*.test.js"` | `Could not find` | passes |
+| `node --test src/content/cta-links.test.js` | passes | passes |
+| `node --test` | passes | passes |
+
+Directory arguments and glob arguments each work on exactly one of the two
+majors, in opposite directions — so either would pass locally and fail in CI.
+Bare `node --test` uses Node's built-in discovery, needs no glob support,
+excludes `node_modules`, and picks up future test files without edits.
 
 - [ ] **Step 3: Run the tests to verify they fail**
 
