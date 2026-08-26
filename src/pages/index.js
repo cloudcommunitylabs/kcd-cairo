@@ -3,6 +3,7 @@ import { Script } from "gatsby";
 import eventData from "../content/event-data.json";
 import { buildCtaLinks } from "../content/cta-links";
 import kcdMark from "../images/kcd-logo-white.svg";
+import "./index.css";
 
 const CTCT_LOADER_SRC =
   "https://static.ctctcdn.com/js/signup-form-widget/current/signup-form-widget.min.js";
@@ -28,23 +29,57 @@ const toScriptSafeJson = (value) =>
   JSON.stringify(value).replace(/</g, "\\u003c");
 
 export default function ComingSoonPage() {
-  const { shortName, city, year, dateLabel, program } = eventData;
+  const { shortName, city, country, year, dateLabel, program } = eventData;
   const ctaLinks = buildCtaLinks(eventData.links);
 
   return (
-    <main>
-      <img
-        className="hero__mark"
-        src={kcdMark}
-        alt="Kubernetes Community Days"
-        width="290"
-        height="93"
-      />
-      <h1>
-        {city} <span>{year}</span>
-      </h1>
-      <p>Coming {year}</p>
-      <p>{dateLabel}</p>
+    <main className="page">
+      <svg className="page__motif" aria-hidden="true" focusable="false">
+        <defs>
+          {/* Eight-point khatam star — a nod to Cairo's geometric tradition,
+              built from two squares so it needs no image asset. */}
+          <pattern
+            id="kcd-khatam"
+            width="80"
+            height="80"
+            patternUnits="userSpaceOnUse"
+          >
+            <g fill="none" stroke="#326ce5" strokeWidth="1">
+              <rect x="20" y="20" width="40" height="40" />
+              <rect
+                x="20"
+                y="20"
+                width="40"
+                height="40"
+                transform="rotate(45 40 40)"
+              />
+            </g>
+            <circle cx="40" cy="40" r="1.75" fill="#e0a458" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#kcd-khatam)" />
+      </svg>
+
+      <section className="hero">
+        <img
+          className="hero__mark"
+          src={kcdMark}
+          alt="Kubernetes Community Days"
+          width="290"
+          height="93"
+        />
+        {/* The space matters: without it the accessible name is "Cairo2027". */}
+        <h1 className="hero__place">
+          {city}{" "}
+          <span className="hero__year">{year}</span>
+        </h1>
+        <hr className="hero__rule" />
+        <p className="hero__status">
+          Coming {year} to {country}. {dateLabel} — the call for papers, tickets
+          and schedule are on their way.
+        </p>
+      </section>
+
       {isNewsletterConfigured && (
         <section className="signup">
           <h2 className="signup__heading">Get launch updates</h2>
@@ -52,12 +87,14 @@ export default function ComingSoonPage() {
           <Script src={CTCT_LOADER_SRC} strategy="idle" />
         </section>
       )}
+
       {ctaLinks.length > 0 && (
-        <nav aria-label="Contact and social links">
-          <ul>
+        <nav className="links" aria-label="Contact and social links">
+          <ul className="links__list">
             {ctaLinks.map(({ key, label, href }) => (
               <li key={key}>
                 <a
+                  className="links__link"
                   href={href}
                   {...(key === "contactEmail"
                     ? {}
@@ -70,12 +107,20 @@ export default function ComingSoonPage() {
           </ul>
         </nav>
       )}
-      <footer>
+
+      <footer className="footer">
         <p>
           {shortName} is part of the{" "}
-          <a href={program.kcd}>Kubernetes Community Days</a> program, supported
-          by the <a href={program.cncf}>Cloud Native Computing Foundation</a>.
+          <a href={program.kcd} target="_blank" rel="noopener noreferrer">
+            Kubernetes Community Days
+          </a>{" "}
+          program, supported by the{" "}
+          <a href={program.cncf} target="_blank" rel="noopener noreferrer">
+            Cloud Native Computing Foundation
+          </a>
+          .
         </p>
+        <p>© {new Date().getFullYear()} {shortName}</p>
       </footer>
     </main>
   );
