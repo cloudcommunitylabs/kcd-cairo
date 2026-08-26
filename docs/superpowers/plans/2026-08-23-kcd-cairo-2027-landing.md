@@ -671,16 +671,48 @@ Expected: build exits 0, `PASS`.
 Run:
 
 ```bash
-for needle in '<title>Kubernetes Community Days Cairo 2027 — Coming 2027</title>' \
+for needle in 'Kubernetes Community Days Cairo 2027 — Coming 2027' \
               'rel="canonical" href="https://kcdcairo.com"' \
               'og:description' \
-              'kcd-logo-white' \
+              'data:image/svg+xml;base64,' \
               'lang="en"'; do
   grep -qF "$needle" public/index.html && echo "OK: $needle" || echo "MISSING: $needle"
 done
 ```
 
 Expected: five `OK:` lines.
+
+Two of these needles are deliberately not the obvious ones, because Gatsby 5
+does not emit the obvious shapes:
+
+- **Not** `<title>…</title>`. The Head API stamps its tags, so the real output is
+  `<title data-gatsby-head="true">…</title>`. Matching the title *text* asserts
+  what actually matters and does not couple the check to Gatsby's attribute.
+- **Not** `kcd-logo-white`. The SVG is 9331 bytes, under Gatsby's 10KB
+  `url-loader` inline threshold, so it is emitted as a base64 data URI and the
+  filename never appears in the HTML. Assert the data URI instead.
+
+Then assert the inlined image is genuinely the committed file, which is a
+stronger check than any filename match:
+
+```bash
+node -e '
+const fs = require("fs");
+const html = fs.readFileSync("public/index.html", "utf8");
+const match = html.match(/data:image\/svg\+xml;base64,([A-Za-z0-9+\/=]+)/);
+if (!match) { console.error("FAIL: no inlined SVG data URI"); process.exit(1); }
+const decoded = Buffer.from(match[1], "base64");
+const source = fs.readFileSync("src/images/kcd-logo-white.svg");
+if (!decoded.equals(source)) { console.error("FAIL: inlined bytes differ from source"); process.exit(1); }
+console.log("PASS: inlined SVG is byte-identical to source (" + decoded.length + " bytes)");
+'
+```
+
+Expected: `PASS: inlined SVG is byte-identical to source (9331 bytes)`.
+
+Base64 inflates the 9331-byte mark to ~12.4KB of HTML. For a one-page holding
+site that trades a round trip for inline bytes, which is the right side of the
+trade; worth revisiting only if the site grows.
 
 - [ ] **Step 5: Commit**
 
