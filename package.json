@@ -1,9 +1,9 @@
 {
-  "name": "fnevent-tier1-default-theme",
+  "name": "kcd-cairo-2027",
   "version": "1.0.0",
   "private": true,
-  "description": "Tier 1 Default fnEvent theme",
-  "author": "FNTech",
+  "description": "Coming-soon landing page for Kubernetes Community Days Cairo 2027",
+  "author": "KCD Cairo",
   "keywords": [
     "gatsby"
   ],
@@ -13,11 +13,14 @@
     "build": "NODE_ENV=production NODE_OPTIONS=--max-old-space-size=10240 cross-env node --trace-warnings node_modules/.bin/gatsby build --log-pages",
     "serve": "gatsby serve",
     "gatsby-clean": "gatsby clean",
-    "clean": "find . -name \"node_modules\" -type d -prune -exec rm -rf '{}' + && yarn && yarn gatsby-clean"
+    "clean": "find . -name \"node_modules\" -type d -prune -exec rm -rf '{}' + && yarn && yarn gatsby-clean",
+    "test": "node --test"
   },
   "dependencies": {
     "@openeventkit/event-site": "2.1.62",
-    "gatsby": "~5.16.1"
+    "gatsby": "~5.16.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "babel-preset-gatsby": "^3.14.0"

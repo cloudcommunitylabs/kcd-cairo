@@ -1,0 +1,22 @@
+{
+  "name": "Kubernetes Community Days Cairo 2027",
+  "shortName": "KCD Cairo 2027",
+  "city": "Cairo",
+  "country": "Egypt",
+  "year": "2027",
+  "dateLabel": "Date to be announced",
+  "siteUrl": "https://kcdcairo.com",
+  "links": {
+    "linkedin": "https://www.linkedin.com/company/kcd-cairo",
+    "x": "",
+    "contactEmail": ""
+  },
+  "newsletter": {
+    "constantContactFormId": "a539b1a8-b115-4dec-9f68-e4b018488b17",
+    "constantContactAccountId": ""
+  },
+  "program": {
+    "kcd": "https://kubernetescommunitydays.org/",
+    "cncf": "https://www.cncf.io/"
+  }
+}
