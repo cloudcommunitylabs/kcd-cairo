@@ -489,8 +489,8 @@ const isNewsletterConfigured = ctctFormId !== "" && ctctAccountId !== "";
  * JSON.stringify escapes quotes and backslashes but NOT "<", and the HTML
  * tokenizer closes a <script> on the literal bytes "</script" with no regard
  * for JS string context. A value containing "</script>" would therefore break
- * out of the script element. Escaping "<" as < parses back to the
- * identical string while making that impossible.
+ * out of the script element. Replacing "<" with its unicode escape parses back
+ * to the identical string while making that impossible.
  */
 const toScriptSafeJson = (value) =>
   JSON.stringify(value).replace(/</g, "\\u003c");
