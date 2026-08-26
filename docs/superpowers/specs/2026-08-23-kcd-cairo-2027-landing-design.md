@@ -176,7 +176,8 @@ entirely and the page is branding-only. The layout must not leave a gap or an
 empty bordered region in that state.
 
 Uses Gatsby's Head API for `<title>`, meta description, canonical URL from
-`siteUrl`, Open Graph and Twitter card tags, and an SVG favicon link. No
+`siteUrl`, Open Graph and Twitter card tags. No favicon link — see the brand-mark
+section below for why there is no square mark to use. No
 `gatsby-plugin-manifest` — it would need a ≥512px PNG and a plugin for one tag.
 
 ### `src/pages/index.css` — styles
@@ -271,8 +272,11 @@ Evidence required before the PR is opened, in this order:
    and the `dateLabel` — confirming real content rendered, not an empty shell.
 3. The built route list contains `/` and no `registration`, `travel` or `faq`
    routes — confirming the OCP pages are dormant.
-4. The build log contains no request to any FNTech or OpenEvent host, and no
-   `onPreBootstrap` entry — confirming the theme is genuinely out of the graph.
+4. The build log contains no `openeventkit`, `fnvirtual`, `simple-oauth2` or
+   `ValidationError` line — confirming the theme is genuinely out of the graph.
+   Do **not** gate on the absence of an `onPreBootstrap` entry: Gatsby core logs
+   that lifecycle name on every build regardless of which plugins are active, so
+   such a gate can never pass.
 5. Every non-empty URL in `event-data.json` resolves (HTTP 2xx/3xx). Empty
    values are skipped.
 6. If `constantContactAccountId` is set, `public/index.html` contains both the
