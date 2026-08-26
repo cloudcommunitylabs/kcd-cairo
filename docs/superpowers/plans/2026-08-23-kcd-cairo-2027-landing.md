@@ -484,6 +484,16 @@ const ctctAccountId = (newsletter.constantContactAccountId ?? "").trim();
  * its own would render a permanently empty div.
  */
 const isNewsletterConfigured = ctctFormId !== "" && ctctAccountId !== "";
+
+/**
+ * JSON.stringify escapes quotes and backslashes but NOT "<", and the HTML
+ * tokenizer closes a <script> on the literal bytes "</script" with no regard
+ * for JS string context. A value containing "</script>" would therefore break
+ * out of the script element. Escaping "<" as < parses back to the
+ * identical string while making that impossible.
+ */
+const toScriptSafeJson = (value) =>
+  JSON.stringify(value).replace(/</g, "\\u003c");
 ```
 
 - [ ] **Step 2: Render the form above the CTA row**
@@ -518,7 +528,13 @@ export const Head = () => (
 );
 ```
 
-`JSON.stringify` rather than string interpolation, so a value containing a quote cannot break out of the script.
+`toScriptSafeJson` rather than raw interpolation or bare `JSON.stringify`.
+`JSON.stringify` alone is not enough: it escapes quotes but leaves `<` intact,
+and the HTML tokenizer ends a `<script>` element on the literal bytes
+`</script` without regard for JS string context. The realistic trigger is not an
+attacker but a copy-paste — Constant Contact presents the universal code as two
+`<script>` blocks, so an organiser pasting the whole second block into
+`constantContactAccountId` instead of just the hash would inject markup.
 
 - [ ] **Step 4: Verify the disabled state emits nothing**
 
@@ -636,7 +652,7 @@ export const Head = () => {
       {isNewsletterConfigured && (
         <script
           dangerouslySetInnerHTML={{
-            __html: `var _ctct_m = ${JSON.stringify(ctctAccountId)};`
+            __html: `var _ctct_m = ${toScriptSafeJson(ctctAccountId)};`
           }}
         />
       )}
