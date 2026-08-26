@@ -1411,7 +1411,7 @@ yarn develop     # http://localhost:8000
 ```
 
 ```bash
-yarn test        # unit tests (node --test)
+yarn test        # unit tests (bare `node --test`, see note below)
 yarn build       # production build into public/
 yarn serve       # serve the production build on :9000
 bash scripts/verify-build.sh   # assert the build actually rendered its content
@@ -1442,7 +1442,18 @@ aborts without `_ctct_m`, so a form id alone would render an empty div.
 
 Pushes to `main` and pull requests trigger `.github/workflows/deploy.yml`, which
 tests, builds, verifies the output, then deploys to Cloudflare Pages via
-`wrangler-action`. Pull requests get a preview URL posted as a comment.
+`wrangler-action`. Pull requests get a preview URL posted as a comment, upserted
+in place so reruns don't spam the thread.
+
+**Pull requests from forks do not deploy.** GitHub withholds repository secrets
+from fork-triggered runs and gives them a read-only token, so the deploy and
+comment steps are skipped deliberately and a step in the log says so. Tests,
+build and output verification still run, so a fork PR is still fully checked —
+it just has no preview URL. To preview a community contribution, push the branch
+to this repo.
+
+Superseded PR runs are cancelled; pushes to `main` are not, so a fast-follow
+commit cannot interrupt a production deploy mid-flight.
 
 Required setup, outside this repo:
 
@@ -1450,6 +1461,19 @@ Required setup, outside this repo:
 2. Repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 3. `kcdcairo.com` added as a custom domain in the Pages project. `static/CNAME`
    records the intent but Cloudflare does not read it.
+
+## A note on `yarn test`
+
+The script is bare `node --test`, with no path or glob. That is deliberate and
+worth not "tidying": a directory argument works on Node 20 but throws
+`MODULE_NOT_FOUND` on Node 22, and a glob argument works on Node 22 but fails on
+Node 20. Only the bare form works on both, and CI runs Node 20 while most
+developers are on something newer.
+
+The trade-off is that bare discovery walks the whole repo rather than just
+`src/`. It excludes `node_modules`, but any file anywhere matching Node's default
+test patterns (`*.test.js`, `*-test.js`, `test-*.js`, a `test/` directory) will be
+picked up. Today that is exactly one file, `src/content/cta-links.test.js`.
 
 ## The parked openeventkit template
 
