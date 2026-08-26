@@ -1407,7 +1407,8 @@ landing page.
 ```bash
 nvm use          # Node 20.19.4, from .nvmrc
 yarn install
-yarn develop     # http://localhost:8000
+yarn develop     # https://localhost:8000 (the script passes -S; first run
+                 # generates a local dev cert and may prompt for sudo)
 ```
 
 ```bash
