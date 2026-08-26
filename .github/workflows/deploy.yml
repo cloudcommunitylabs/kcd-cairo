@@ -46,6 +46,9 @@ jobs:
       - name: Verify build output
         run: bash scripts/verify-build.sh
 
+      - name: Check colour contrast
+        run: node scripts/check-contrast.mjs
+
       # Forks get neither repository secrets nor a writable GITHUB_TOKEN on
       # pull_request, so deploying and commenting are impossible there. Skipping
       # explicitly keeps community PRs green on the parts that CAN run (tests,

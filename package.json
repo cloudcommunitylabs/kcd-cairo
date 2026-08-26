@@ -1,9 +1,9 @@
 {
-  "name": "fnevent-tier1-default-theme",
+  "name": "kcd-cairo-2027",
   "version": "1.0.0",
   "private": true,
-  "description": "Tier 1 Default fnEvent theme",
-  "author": "FNTech",
+  "description": "Coming-soon landing page for Kubernetes Community Days Cairo 2027",
+  "author": "KCD Cairo",
   "keywords": [
     "gatsby"
   ],

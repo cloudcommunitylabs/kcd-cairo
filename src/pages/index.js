@@ -111,13 +111,21 @@ export default function ComingSoonPage() {
       <footer className="footer">
         <p>
           {shortName} is part of the{" "}
-          <a href={program.kcd} target="_blank" rel="noopener noreferrer">
-            Kubernetes Community Days
-          </a>{" "}
+          {program?.kcd ? (
+            <a href={program.kcd} target="_blank" rel="noopener noreferrer">
+              Kubernetes Community Days
+            </a>
+          ) : (
+            "Kubernetes Community Days"
+          )}{" "}
           program, supported by the{" "}
-          <a href={program.cncf} target="_blank" rel="noopener noreferrer">
-            Cloud Native Computing Foundation
-          </a>
+          {program?.cncf ? (
+            <a href={program.cncf} target="_blank" rel="noopener noreferrer">
+              Cloud Native Computing Foundation
+            </a>
+          ) : (
+            "Cloud Native Computing Foundation"
+          )}
           .
         </p>
         <p>© {new Date().getFullYear()} {shortName}</p>
@@ -128,23 +136,24 @@ export default function ComingSoonPage() {
 
 export const Head = () => {
   const { name, city, country, year, dateLabel, siteUrl } = eventData;
+  const title = `${name} — Coming ${year}`;
   const description = `${name} is coming to ${city}, ${country}. ${dateLabel}. Sign up to hear first when the date, call for papers and tickets are announced.`;
 
   return (
     <>
       <html lang="en" />
-      <title>{`${name} — Coming ${year}`}</title>
+      <title>{title}</title>
       <meta name="description" content={description} />
       <link rel="canonical" href={siteUrl} />
 
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content={name} />
-      <meta property="og:title" content={`${name} — Coming ${year}`} />
+      <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:url" content={siteUrl} />
 
       <meta name="twitter:card" content="summary" />
-      <meta name="twitter:title" content={`${name} — Coming ${year}`} />
+      <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
 
       <meta name="theme-color" content="#0B1016" />

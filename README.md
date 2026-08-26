@@ -27,12 +27,16 @@ change is needed to update copy or links.
 
 | Field | Effect |
 | --- | --- |
+| `name` | Page `<title>` and meta description |
+| `shortName` | Footer copy |
 | `city`, `country`, `year` | Headline and metadata |
 | `dateLabel` | Status line. Keep it honest — there is no confirmed date yet |
+| `siteUrl` | Canonical URL and Open Graph URL |
 | `links.linkedin`, `links.x` | Full profile URLs |
 | `links.contactEmail` | Bare address; `mailto:` is added for you |
 | `newsletter.constantContactFormId` | Constant Contact inline form id |
 | `newsletter.constantContactAccountId` | The `_ctct_m` value from the account's universal code |
+| `program.kcd`, `program.cncf` | The two footer links, to the KCD program and the CNCF |
 
 **A link or form renders only when its value is non-empty.** Leave a field as
 `""` and it disappears from the page — no dead anchors, no empty boxes.
@@ -104,9 +108,41 @@ To revive the theme you need **both**: uncomment the plugin in
 `node_modules/@openeventkit/event-site/env.template`. Uncommenting alone will
 not build.
 
-Design notes live in `docs/superpowers/specs/`.
+That is still not sufficient to get the theme's own pages back:
+
+- The theme runs `gatsby-plugin-page-creator` over the **site's** `src/pages`
+  (`node_modules/@openeventkit/event-site/src/utils/filePath.js` sets
+  `PAGES_DIR_PATH = "src/pages"`) and ships its own
+  `src/pages/index.js`. The site's `src/pages/index.js` takes precedence over
+  the theme's, so after uncommenting the plugin `/` would still be this
+  coming-soon page. You must also remove or rename this repo's
+  `src/pages/index.js` (and `src/pages/index.css`, see next point) for the
+  theme's homepage to take over.
+- `src/pages/index.css`'s global resets (`:root`, `*`, `html`, `body`) compile
+  into Gatsby's shared stylesheet, which is linked on **every** page in
+  production, not into a page-scoped chunk. Left in place, the dark `#0b1016`
+  background, `margin: 0` and the font stack would apply site-wide and fight
+  the theme's own Sass. Removing or renaming `src/pages/index.css` alongside
+  `src/pages/index.js` avoids that.
+
+The `build` script also invokes `cross-env`, which today resolves only as a
+transitive dependency of `@openeventkit/event-site` — it is not declared
+directly in `package.json`. If the theme dependency is ever removed as "dead
+weight" without noticing this, `build` breaks with `cross-env: command not
+found` and nothing in the error points at the theme as the cause.
+
+Design notes live in `docs/superpowers/specs/`. `docs/superpowers/plans/` also
+has the original implementation plan for this landing page — kept as a
+historical record of how it was built, not maintained, and not a source of
+current truth.
 
 ## Licence
 
 Part of the [Kubernetes Community Days](https://kubernetescommunitydays.org/)
 program, supported by the [CNCF](https://www.cncf.io/). See `LICENSE`.
+
+`src/images/kcd-logo-white.svg` is CNCF artwork from
+[`cncf/artwork`](https://github.com/cncf/artwork)
+(`other/kubernetes-community-days/horizontal/white/kcd-logo-white.svg`),
+licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), used
+here under that licence's attribution requirement.

@@ -30,6 +30,9 @@ module.exports = {
     description: `${eventData.name}. Coming ${eventData.year} to ${eventData.city}, ${eventData.country}.`,
     siteUrl: eventData.siteUrl
   },
+  /*flags: {
+    DEV_SSR: true
+  },*/
   plugins: [
     // "@openeventkit/event-site"
   ]
