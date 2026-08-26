@@ -16,6 +16,16 @@ const ctctAccountId = (newsletter.constantContactAccountId ?? "").trim();
  */
 const isNewsletterConfigured = ctctFormId !== "" && ctctAccountId !== "";
 
+/**
+ * JSON.stringify escapes quotes and backslashes but NOT "<", and the HTML
+ * tokenizer closes a <script> on the literal bytes "</script" with no regard
+ * for JS string context. A value containing "</script>" would therefore break
+ * out of the script element. Escaping "<" as < parses back to the
+ * identical string while making that impossible.
+ */
+const toScriptSafeJson = (value) =>
+  JSON.stringify(value).replace(/</g, "\\u003c");
+
 export default function ComingSoonPage() {
   const { shortName, city, year, dateLabel, program } = eventData;
   const ctaLinks = buildCtaLinks(eventData.links);
@@ -69,7 +79,7 @@ export const Head = () => (
     {isNewsletterConfigured && (
       <script
         dangerouslySetInnerHTML={{
-          __html: `var _ctct_m = ${JSON.stringify(ctctAccountId)};`
+          __html: `var _ctct_m = ${toScriptSafeJson(ctctAccountId)};`
         }}
       />
     )}
