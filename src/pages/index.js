@@ -2,6 +2,7 @@ import * as React from "react";
 import { Script } from "gatsby";
 import eventData from "../content/event-data.json";
 import { buildCtaLinks } from "../content/cta-links";
+import kcdMark from "../images/kcd-logo-white.svg";
 
 const CTCT_LOADER_SRC =
   "https://static.ctctcdn.com/js/signup-form-widget/current/signup-form-widget.min.js";
@@ -32,7 +33,13 @@ export default function ComingSoonPage() {
 
   return (
     <main>
-      <p>Kubernetes Community Days</p>
+      <img
+        className="hero__mark"
+        src={kcdMark}
+        alt="Kubernetes Community Days"
+        width="290"
+        height="93"
+      />
       <h1>
         {city} <span>{year}</span>
       </h1>
@@ -74,14 +81,36 @@ export default function ComingSoonPage() {
   );
 }
 
-export const Head = () => (
-  <>
-    {isNewsletterConfigured && (
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `var _ctct_m = ${toScriptSafeJson(ctctAccountId)};`
-        }}
-      />
-    )}
-  </>
-);
+export const Head = () => {
+  const { name, city, country, year, dateLabel, siteUrl } = eventData;
+  const description = `${name} is coming to ${city}, ${country}. ${dateLabel}. Sign up to hear first when the date, call for papers and tickets are announced.`;
+
+  return (
+    <>
+      <html lang="en" />
+      <title>{`${name} — Coming ${year}`}</title>
+      <meta name="description" content={description} />
+      <link rel="canonical" href={siteUrl} />
+
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content={name} />
+      <meta property="og:title" content={`${name} — Coming ${year}`} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={siteUrl} />
+
+      <meta name="twitter:card" content="summary" />
+      <meta name="twitter:title" content={`${name} — Coming ${year}`} />
+      <meta name="twitter:description" content={description} />
+
+      <meta name="theme-color" content="#0B1016" />
+
+      {isNewsletterConfigured && (
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `var _ctct_m = ${toScriptSafeJson(ctctAccountId)};`
+          }}
+        />
+      )}
+    </>
+  );
+};
