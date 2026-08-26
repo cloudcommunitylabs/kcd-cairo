@@ -1120,9 +1120,34 @@ Temporarily set `links.linkedin` to `""` in `src/content/event-data.json`, then:
 
 ```bash
 rm -rf public .cache && yarn build
-grep -c 'links__list\|signup' public/index.html || echo "ABSENT: both optional sections collapsed"
+echo "signup section: $(grep -c '<section class="signup"' public/index.html)"
+echo "links nav:      $(grep -c '<nav class="links"' public/index.html)"
 ```
-Expected: `ABSENT: both optional sections collapsed`.
+Expected: both counts `0`.
+
+Match the **markup**, not the class names. Gatsby inlines the page's CSS into
+`<head>`, so `signup` and `links__list` appear as selectors whether or not the
+elements render — a bare class-name grep reports a match on the stylesheet and
+proves nothing. `<section class="signup"` and `<nav class="links"` appear only
+in emitted markup.
+
+Then confirm nothing is left between the hero and the footer:
+
+```bash
+node -e '
+const html = require("fs").readFileSync("public/index.html", "utf8");
+const main = html.match(/<main class="page">[\s\S]*?<\/main>/);
+if (!main) { console.error("FAIL: no <main class=\"page\"> in output"); process.exit(1); }
+const tags = main[0]
+  .replace(/<svg[\s\S]*?<\/svg>/, "")
+  .match(/<(section|nav|footer)\b[^>]*>/g) || [];
+console.log(tags.join("\n"));
+'
+```
+
+Expected: exactly `<section class="hero">` then `<footer class="footer">`, with no
+`nav` or second `section` between them. Because `.page` uses flex `gap`, an
+absent child contributes no space — this confirms that rather than assuming it.
 
 Open `yarn serve` at `http://localhost:9000` and confirm the hero and footer sit
 with no orphaned gap or stray border between them. Because `.page` uses flex
