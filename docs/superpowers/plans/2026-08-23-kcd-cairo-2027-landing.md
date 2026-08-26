@@ -1217,7 +1217,12 @@ on:
 
 concurrency:
   group: pages-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, never a push to main. On a push, head_ref is
+  # empty so every main build shares the group `pages-main`; cancelling there
+  # would kill an in-flight production deploy and report it as "cancelled",
+  # which reads as harmlessly superseded rather than "production was
+  # interrupted mid-deploy".
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   deploy:
@@ -1247,22 +1252,46 @@ jobs:
       - name: Verify build output
         run: bash scripts/verify-build.sh
 
+      # Forks get neither repository secrets nor a writable GITHUB_TOKEN on
+      # pull_request, so deploying and commenting are impossible there. Skipping
+      # explicitly keeps community PRs green on the parts that CAN run (tests,
+      # build, output verification) instead of showing a permanently red check
+      # that looks like a real defect.
       - name: Deploy to Cloudflare Pages
+        id: deploy
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy public --project-name=kcd-cairo-2027 --branch=${{ github.head_ref || github.ref_name }}
 
+      - name: Explain skipped deploy on fork PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "Fork pull request: Cloudflare credentials are not exposed to forks,"
+          echo "so the deploy and the preview comment are skipped by design."
+          echo "Tests, build and build-output verification all ran above."
+
       - name: Comment preview URL on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/github-script@v7
+        env:
+          # Read the alias Cloudflare actually created rather than guessing it.
+          # Passed through env, not interpolated into the script body, so the
+          # value cannot alter the script.
+          DEPLOY_ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
         with:
           script: |
             const branch = context.payload.pull_request.head.ref;
             const sha = context.payload.pull_request.head.sha.substring(0, 8);
-            const alias = branch.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
-            const url = `https://${alias}.kcd-cairo-2027.pages.dev`;
+
+            // Prefer wrangler-action's real alias URL. The hand-computed form is
+            // only a fallback: it cannot reproduce Cloudflare's handling of a
+            // branch name whose sanitised form exceeds the 63-character DNS
+            // label limit, so guessing can post a link that was never created.
+            const fallback = `https://${branch.replace(/[^a-z0-9-]/gi, '-').toLowerCase()}.kcd-cairo-2027.pages.dev`;
+            const url = process.env.DEPLOY_ALIAS_URL || fallback;
 
             const marker = '<!-- kcd-cairo-preview -->';
             const body = [
@@ -1273,7 +1302,7 @@ jobs:
               '',
               'Worth checking:',
               '- Headline and "Coming 2027" copy, with no invented event date',
-              '- Signup form renders only when the Constant Contact account id is set',
+              '- Signup form renders only when BOTH Constant Contact form id and account id are set',
               '- Social and email links appear only for values present in `src/content/event-data.json`',
               '- Layout holds at 320px width with no horizontal scroll',
               '- No OCP content leaking in (no /registration, /travel or /faq routes)',
@@ -1281,10 +1310,14 @@ jobs:
               `*${sha} on \`${branch}\`*`
             ].join('\n');
 
-            const { data: comments } = await github.rest.issues.listComments({
+            // Paginate. listComments returns 30 oldest-first by default, so on a
+            // PR that already has 30+ comments the marker comment falls off page
+            // one forever and every later run posts a fresh duplicate.
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.pull_request.number
+              issue_number: context.payload.pull_request.number,
+              per_page: 100
             });
 
             const existing = comments.find((c) => c.body.includes(marker));
@@ -1310,7 +1343,10 @@ jobs:
 Differences from `kcd-new-york`'s version, each deliberate:
 - A hidden `<!-- kcd-cairo-preview -->` marker identifies the bot comment. NY matches on a visible emoji heading and on `user.type === 'Bot'`, which breaks the moment the heading is reworded.
 - `yarn test` and the build-output verification run before deploy, so a broken build cannot reach Cloudflare.
-- `concurrency` cancels superseded runs per branch.
+- `concurrency` cancels superseded **PR** runs only — never a push to `main`, which would interrupt a production deploy.
+- Deploy and comment are skipped on fork PRs, with a step that says why. Forks receive no repository secrets and a read-only `GITHUB_TOKEN`, so both steps would fail on every community PR regardless of how Cloudflare is provisioned. NY's version fails silently in that case.
+- The preview URL comes from `steps.deploy.outputs.pages-deployment-alias-url` (wrangler ≥ 3.78.0), with the hand-computed alias only as a fallback. NY guesses the URL unconditionally, which cannot survive a branch name whose sanitised form exceeds the 63-character DNS label limit.
+- Comment lookup paginates, so the marker comment is still found on a PR with more than 30 comments.
 - The review checklist describes this page. NY's lists floor plans, transit tabs and a photo gallery, none of which exist here.
 
 - [ ] **Step 3: Validate the workflow parses**
