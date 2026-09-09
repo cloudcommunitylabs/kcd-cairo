@@ -31,6 +31,13 @@
     "kcdProgram": "https://www.cncf.io/kcds/",
     "cncf": "https://www.cncf.io/"
   },
+  "newsletter": {
+    "provider": "constant-contact",
+    "constantContactFormId": "a539b1a8-b115-4dec-9f68-e4b018488b17",
+    "constantContactAccountId": "",
+    "title": "Get KCD Cairo updates",
+    "text": "Be the first to hear when the date is locked in, the call for proposals opens and tickets go on sale. No spam, unsubscribe any time."
+  },
   "sections": {
     "about": true,
     "getInvolved": true,
