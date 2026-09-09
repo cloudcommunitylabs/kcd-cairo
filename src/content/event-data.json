@@ -1,0 +1,45 @@
+{
+  "name": "KCD Cairo 2027",
+  "shortName": "KCD Cairo",
+  "fullName": "Kubernetes Community Days Cairo 2027",
+  "year": 2027,
+  "status": "coming-soon",
+  "tagline": "The cloud native community is coming to Cairo.",
+  "description": "Kubernetes Community Days Cairo 2027 is a community-organized, CNCF-supported event bringing together adopters, contributors and technologists from the open source and cloud native ecosystem in Egypt and the region. Dates, venue, call for proposals, sponsorship and registration will be announced here.",
+  "date": {
+    "display": "April 2027",
+    "iso": "",
+    "note": "Exact date to be announced"
+  },
+  "location": {
+    "city": "Cairo",
+    "country": "Egypt",
+    "venue": "",
+    "address": "",
+    "note": "Venue to be announced"
+  },
+  "links": {
+    "website": "",
+    "email": "",
+    "linkedin": "",
+    "twitter": "",
+    "cncfCommunity": "",
+    "cfp": "",
+    "registration": "",
+    "sponsorProspectus": "",
+    "volunteer": "",
+    "kcdProgram": "https://www.cncf.io/kcds/",
+    "cncf": "https://www.cncf.io/"
+  },
+  "sections": {
+    "about": true,
+    "getInvolved": true,
+    "keyDates": false,
+    "sponsors": false,
+    "speakers": false,
+    "schedule": false,
+    "team": false,
+    "legal": false
+  },
+  "keyDates": []
+}

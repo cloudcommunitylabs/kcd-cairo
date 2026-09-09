@@ -1,11 +1,13 @@
 {
-  "name": "fnevent-tier1-default-theme",
+  "name": "kcd-cairo-2027",
   "version": "1.0.0",
   "private": true,
-  "description": "Tier 1 Default fnEvent theme",
-  "author": "FNTech",
+  "description": "Kubernetes Community Days Cairo 2027 website",
+  "author": "KCD Cairo",
   "keywords": [
-    "gatsby"
+    "gatsby",
+    "kcd",
+    "kubernetes-community-days"
   ],
   "scripts": {
     "develop": "gatsby develop -S -H 0.0.0.0",
@@ -17,7 +19,9 @@
   },
   "dependencies": {
     "@openeventkit/event-site": "2.1.62",
-    "gatsby": "~5.16.1"
+    "gatsby": "~5.16.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "babel-preset-gatsby": "^3.14.0"

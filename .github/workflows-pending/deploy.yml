@@ -1,0 +1,111 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  CLOUDFLARE_PAGES_PROJECT: kcd-cairo-2027
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile --network-timeout 600000
+
+      - name: Build Gatsby site
+        run: yarn build
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy public --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=${{ github.head_ref || github.ref_name }}
+
+      - name: Comment on PR with deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PROJECT_NAME: ${{ env.CLOUDFLARE_PAGES_PROJECT }}
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const commitSha = context.payload.pull_request.head.sha.substring(0, 8);
+            const prNumber = context.payload.pull_request.number;
+            const projectName = process.env.PROJECT_NAME;
+
+            // Cloudflare Pages branch alias: lowercase, non [a-z0-9-] replaced with "-", max 28 chars
+            const branchAlias = branchName
+              .toLowerCase()
+              .replace(/[^a-z0-9-]/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .substring(0, 28)
+              .replace(/-+$/g, '');
+            const previewUrl = `https://${branchAlias}.${projectName}.pages.dev`;
+
+            const comment = `## 🚀 Deployment Ready for Review
+
+            Your branch has been deployed to Cloudflare Pages!
+
+            **Preview URL:** ${previewUrl}
+
+            ### Pages to Review:
+            - **Landing page (coming soon):** ${previewUrl}
+            - **404 page:** ${previewUrl}/this-page-does-not-exist
+
+            ### What to Check:
+            - ✅ Hero shows "KCD Cairo 2027", "Coming soon", date and location
+            - ✅ Only links that are filled in \`src/content/event-data.json\` are visible
+            - ✅ Responsive design on mobile/tablet/desktop
+            - ✅ Mobile navigation toggle (when more than one nav item is enabled)
+
+            ---
+            *Deployment: ${commitSha} | Branch: ${branchName}*`;
+
+            // Find existing deployment comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🚀 Deployment Ready for Review')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: comment
+              });
+            }
