@@ -668,6 +668,11 @@ img {
   padding: 5.5rem 0;
 }
 
+/* Anchored sections land below the fixed navbar */
+section[id] {
+  scroll-margin-top: var(--nav-height);
+}
+
 .kcd-section-sky {
   background:
     radial-gradient(rgba(78, 187, 213, 0.22) 1px, transparent 1.5px) 0 0 / 22px 22px,

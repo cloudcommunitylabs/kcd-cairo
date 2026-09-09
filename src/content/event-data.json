@@ -34,7 +34,7 @@
   "newsletter": {
     "provider": "constant-contact",
     "constantContactFormId": "a539b1a8-b115-4dec-9f68-e4b018488b17",
-    "constantContactAccountId": "",
+    "constantContactAccountId": "26e3db1f65849647142c97ca07e9886a",
     "title": "Get KCD Cairo updates",
     "text": "Be the first to hear when the date is locked in, the call for proposals opens and tickets go on sale. No spam, unsubscribe any time."
   },
