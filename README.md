@@ -43,7 +43,11 @@ kcd-cairo/
 │       ├── index.js               # Coming-soon landing page
 │       ├── 404.js                 # Not-found page
 │       └── content-pages/*.md     # OpenEventKit template pages (unused until the template is enabled)
-├── static/                        # favicon.svg, robots.txt, template assets
+├── static/
+│   ├── brand/                     # Official KCD Cairo 2027 logo assets (SVG)
+│   ├── fonts/                     # Self-hosted Lexend + Inter (+ template fonts)
+│   ├── favicon.svg, og-image.png, robots.txt
+│   └── img/                       # OpenEventKit template assets
 └── netlify.toml                   # Legacy Netlify config from the template (not used by Cloudflare)
 ```
 
@@ -71,7 +75,20 @@ Leave a link as an empty string (`""`) to keep it hidden.
 
 ### Branding
 
-Colours and fonts live at the top of `src/components/layout.css` (`--color-primary` Kubernetes blue, `--color-accent` Cairo gold, `--color-navy` background). The favicon is `static/favicon.svg`. Add a 1200×630 `static/og-image.png` for social sharing previews.
+The site uses the official **KCD Cairo 2027** identity from the Canva logo pack (`KCD_Cairo_2027.pdf`). The vector assets were extracted from it into `static/brand/`:
+
+| File | Use |
+| --- | --- |
+| `kcd-cairo-lockup-blue.svg` | Horizontal "KCD Cairo 2027" lockup, blue on light (navbar) |
+| `kcd-cairo-lockup-white.svg` | Same lockup in white (navy band, footer) |
+| `kcd-cairo-skyline.svg` | Cairo skyline illustration (hero) |
+| `kcd-cairo-logo.svg` / `kcd-cairo-logo-round.svg` | Full square and round logos (about section, social) |
+| `kcd-icon.svg` | Hands-in-hexagon icon (also `static/favicon.svg`) |
+| `kcd-growing-cloud-native-together.png` | KCD wordmark with the programme slogan |
+
+Brand colours are defined as CSS variables at the top of `src/components/layout.css`: KCD blue `#0087FF`, navy `#022150`, sky `#4EBBD5` / `#A9D9E3`, sand `#F5D57A` / `#EAC463`. The logo wordmark is set in THICCCBOI; the site uses self-hosted **Lexend** (display) and **Inter** (body) from `static/fonts/` as the closest open-licensed match, so no third-party font requests are made.
+
+`static/og-image.png` (1200×630) is the social sharing preview, composed from the same assets. Regenerate it if the date or slogan changes.
 
 ---
 

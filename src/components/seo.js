@@ -36,6 +36,7 @@ function Seo({ description, title, children }) {
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={metaDescription} />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+      <link rel="preload" href="/fonts/lexend-variable-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
       {children}
     </>
   );

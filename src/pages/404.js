@@ -8,7 +8,7 @@ export const Head = () => <Seo title="Page not found" />;
 export default function NotFoundPage() {
   return (
     <Layout>
-      <section className="kcd-section kcd-section-dark kcd-not-found">
+      <section className="kcd-section kcd-section-sky kcd-not-found">
         <div className="kcd-container kcd-center">
           <p className="kcd-eyebrow">404</p>
           <h1 className="kcd-title">That page isn't ready yet</h1>

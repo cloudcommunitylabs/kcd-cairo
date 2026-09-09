@@ -4,30 +4,12 @@ import "./layout.css";
 import eventData from "../content/event-data.json";
 import { getEventLifecycle } from "../utils/event-lifecycle";
 
-const KcdMark = () => (
-  <span className="kcd-mark" aria-hidden="true">
-    <svg viewBox="0 0 40 40" width="28" height="28" focusable="false">
-      <polygon
-        points="20,2 36,11 36,29 20,38 4,29 4,11"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14 12v16M14 20l10-8M14 20l10 8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  </span>
-);
+const LOCKUP_BLUE = "/brand/kcd-cairo-lockup-blue.svg";
+const LOCKUP_WHITE = "/brand/kcd-cairo-lockup-white.svg";
 
 /**
- * Minimal site chrome for the coming-soon landing page.
+ * Site chrome for the coming-soon landing page, using the official
+ * KCD Cairo 2027 lockups from static/brand.
  * Navigation items only appear when the matching section or link is ready
  * (see src/content/event-data.json and src/utils/event-lifecycle.js).
  */
@@ -54,11 +36,7 @@ export default function Layout({ children }) {
       <header className="kcd-navbar">
         <div className="kcd-navbar-inner">
           <Link to="/" className="kcd-brand" aria-label={`${eventData.name} home`}>
-            <KcdMark />
-            <span className="kcd-brand-text">
-              <span className="kcd-brand-name">{eventData.shortName}</span>
-              <span className="kcd-brand-year">{eventData.year}</span>
-            </span>
+            <img src={LOCKUP_BLUE} alt={eventData.name} width="228" height="67" />
           </Link>
 
           {showBurger && (
@@ -95,7 +73,7 @@ export default function Layout({ children }) {
             {lifecycle.isRegistrationOpen && (
               <a
                 href={links.registration}
-                className="kcd-button kcd-button-accent kcd-nav-cta"
+                className="kcd-button kcd-button-primary kcd-nav-cta"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -116,9 +94,9 @@ export default function Layout({ children }) {
       <footer className="kcd-footer">
         <div className="kcd-container kcd-footer-grid">
           <div>
-            <p className="kcd-footer-heading">{eventData.fullName}</p>
+            <img className="kcd-footer-logo" src={LOCKUP_WHITE} alt={eventData.name} width="228" height="65" />
             <p className="kcd-footer-text">
-              A community-organized event, part of the{" "}
+              Growing cloud native together. A community-organized event, part of the{" "}
               <a href={links.kcdProgram} target="_blank" rel="noopener noreferrer">
                 Kubernetes Community Days
               </a>{" "}
