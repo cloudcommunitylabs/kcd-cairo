@@ -28,7 +28,7 @@ If you hit cache or module errors, run `yarn gatsby-clean` and try again.
 
 ```
 kcd-cairo/
-├── .github/workflows/deploy.yml   # Build + deploy to Cloudflare Pages
+├── .github/workflows-pending/     # deploy.yml: build + deploy to Cloudflare Pages (move to .github/workflows/, see Deployment)
 ├── gatsby-config.js               # Site metadata; loads the full template only when ENABLE_EVENT_SITE=true
 ├── src/
 │   ├── content/
@@ -80,6 +80,13 @@ Colours and fonts live at the top of `src/components/layout.css` (`--color-prima
 Deployment mirrors [kcd-new-york](https://github.com/cloudcommunitylabs/kcd-new-york): GitHub Actions builds the site and publishes the `public/` folder to Cloudflare Pages with `wrangler`.
 
 **Workflow:** `.github/workflows/deploy.yml`
+
+> **Activation needed:** the workflow is committed at `.github/workflows-pending/deploy.yml` because the automation that opened the first PR is not allowed to create files under `.github/workflows/`. Move it into place once (a maintainer with the `workflow` scope):
+>
+> ```bash
+> git mv .github/workflows-pending/deploy.yml .github/workflows/deploy.yml
+> git commit -m "Enable Cloudflare Pages deploy workflow" && git push
+> ```
 
 - Push to `main` → production deployment.
 - Pull request against `main` → preview deployment; the workflow comments the preview URL on the PR.
