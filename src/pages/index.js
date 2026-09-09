@@ -3,6 +3,7 @@ import Layout from "../components/layout";
 import Seo from "../components/seo";
 import eventData from "../content/event-data.json";
 import { getEventLifecycle } from "../utils/event-lifecycle";
+import NewsletterSignup, { NEWSLETTER_WIDGET_SRC, hasNewsletterForm } from "../components/newsletter-signup";
 
 const SKYLINE = "/brand/kcd-cairo-skyline.svg";
 const LOCKUP_WHITE = "/brand/kcd-cairo-lockup-white.svg";
@@ -98,9 +99,23 @@ export const Head = () => {
     schema.startDate = eventData.date.iso;
   }
 
+  const newsletterReady = hasNewsletterForm(eventData.newsletter);
+
   return (
     <Seo>
       <script type="application/ld+json">{JSON.stringify(schema)}</script>
+      {newsletterReady && (
+        <>
+          {/* Begin Constant Contact Active Forms (universal code) */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `var _ctct_m = ${JSON.stringify(eventData.newsletter.constantContactAccountId)};`,
+            }}
+          />
+          <script id="signupScript" src={NEWSLETTER_WIDGET_SRC} async defer />
+          {/* End Constant Contact Active Forms */}
+        </>
+      )}
     </Seo>
   );
 };
@@ -109,8 +124,11 @@ export default function IndexPage() {
   const lifecycle = getEventLifecycle(eventData);
   const { links, date, location } = eventData;
 
+  const newsletterReady = hasNewsletterForm(eventData.newsletter);
+
   const primaryActions = [
     lifecycle.isRegistrationOpen && { href: links.registration, label: "Register now", kind: "primary" },
+    newsletterReady && { href: "#updates", label: "Get updates", kind: "primary", internal: true },
     lifecycle.isCfpOpen && { href: links.cfp, label: "Submit a talk", kind: "accent" },
     lifecycle.isSponsorProspectusVisible && { href: links.sponsorProspectus, label: "Sponsor KCD Cairo", kind: "ghost" },
   ].filter(Boolean);
@@ -178,8 +196,8 @@ export default function IndexPage() {
                   key={action.label}
                   href={action.href}
                   className={`kcd-button kcd-button-${action.kind}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  target={action.internal ? undefined : "_blank"}
+                  rel={action.internal ? undefined : "noopener noreferrer"}
                 >
                   {action.label}
                 </a>
@@ -229,6 +247,8 @@ export default function IndexPage() {
           </div>
         </div>
       </section>
+
+      <NewsletterSignup newsletter={eventData.newsletter} />
 
       {lifecycle.showAbout && (
         <section className="kcd-section" id="about">

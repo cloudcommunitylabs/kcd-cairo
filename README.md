@@ -70,8 +70,18 @@ Everything visible on the landing page is driven by **`src/content/event-data.js
 | `sections.*` | Toggle whole sections (`about`, `getInvolved`, `keyDates`, `sponsors`, `speakers`, `schedule`, `team`, `legal`). Navigation items for `schedule`/`speakers`/`sponsors`/`team` only appear when the section is enabled *and* a matching page exists. |
 | `keyDates` | Array of `{ "date": "...", "label": "..." }` shown when `sections.keyDates` is `true`. |
 | `status` | Set to anything other than `coming-soon` to remove the "Coming soon" badges. |
+| `newsletter.constantContactFormId`, `newsletter.constantContactAccountId` | The "Stay in the loop" sign-up section (Constant Contact inline form) plus a **Get updates** button in the hero. See [Email sign-up](#-email-sign-up-constant-contact). |
 
 Leave a link as an empty string (`""`) to keep it hidden.
+
+### 📬 Email sign-up (Constant Contact)
+
+The sign-up form is Constant Contact's inline form. Two values in `src/content/event-data.json` → `newsletter` control it:
+
+- `constantContactFormId` — the `data-form-id` from the form's inline code (`<div class="ctct-inline-form" data-form-id="…">`).
+- `constantContactAccountId` — the `_ctct_m` value from the account's **Universal Code** (Constant Contact → Sign-up Forms → your form → Inline code → *Universal Code*, the line `var _ctct_m = "…"`).
+
+The widget script cannot render without `_ctct_m`, so the section, the hero button and the scripts only appear once **both** values are set. The widget loads from `static.ctctcdn.com`; the page ships no other third-party script.
 
 ### Branding
 

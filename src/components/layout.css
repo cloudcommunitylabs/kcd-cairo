@@ -668,6 +668,11 @@ img {
   padding: 5.5rem 0;
 }
 
+/* Anchored sections land below the fixed navbar */
+section[id] {
+  scroll-margin-top: var(--nav-height);
+}
+
 .kcd-section-sky {
   background:
     radial-gradient(rgba(78, 187, 213, 0.22) 1px, transparent 1.5px) 0 0 / 22px 22px,
@@ -935,6 +940,94 @@ img {
   justify-content: center;
   gap: 0.75rem;
   margin-top: 2.5rem;
+}
+
+/* Stay in the loop (Constant Contact inline form) */
+.kcd-section-updates {
+  background:
+    radial-gradient(rgba(234, 196, 99, 0.35) 1px, transparent 1.5px) 0 0 / 22px 22px,
+    linear-gradient(180deg, #ffffff 0%, var(--kcd-sand-pale) 100%);
+}
+
+.kcd-updates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.kcd-updates-copy .kcd-lead {
+  margin-bottom: 0;
+}
+
+.kcd-updates-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--kcd-blue);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  min-height: 12rem;
+}
+
+.kcd-updates-noscript {
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .kcd-updates-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* Light touch on the widget's own markup so it matches the site */
+.kcd-updates-card .ctct-inline-form,
+.kcd-updates-card .ctct-form-container,
+.kcd-updates-card .ctct-form-container * {
+  font-family: var(--font-body) !important;
+}
+
+.kcd-updates-card .ctct-form-container {
+  padding: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.kcd-updates-card .ctct-form-header,
+.kcd-updates-card .ctct-form-header * {
+  font-family: var(--font-display) !important;
+  color: var(--kcd-navy) !important;
+}
+
+.kcd-updates-card .ctct-form-field {
+  margin-bottom: 1rem !important;
+}
+
+.kcd-updates-card .ctct-form-element {
+  border-radius: 12px !important;
+  border: 1px solid var(--line) !important;
+  padding: 0.75rem 1rem !important;
+}
+
+.kcd-updates-card .ctct-form-element:focus {
+  border-color: var(--kcd-blue) !important;
+  box-shadow: 0 0 0 3px var(--kcd-blue-soft) !important;
+}
+
+.kcd-updates-card .ctct-form-button {
+  background: var(--kcd-blue) !important;
+  border: 2px solid var(--kcd-blue) !important;
+  border-radius: 999px !important;
+  color: #fff !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  padding: 0.85rem 1.6rem !important;
+}
+
+.kcd-updates-card .ctct-form-button:hover {
+  background: var(--kcd-blue-dark) !important;
+  border-color: var(--kcd-blue-dark) !important;
 }
 
 .kcd-not-found {
