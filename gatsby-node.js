@@ -82,11 +82,13 @@ exports.onPostBuild = async ({ store, reporter }) => {
   const publicDir = path.join(program.directory, "public");
 
   const ics = buildIcs(eventData, getSiteUrl(store));
+  const icsFile = path.join(publicDir, getCalendarFileName(eventData));
   if (ics) {
-    const file = path.join(publicDir, getCalendarFileName(eventData));
-    await fs.promises.writeFile(file, ics, "utf8");
-    reporter.info(`Wrote calendar file ${path.relative(program.directory, file)}`);
+    await fs.promises.writeFile(icsFile, ics, "utf8");
+    reporter.info(`Wrote calendar file ${path.relative(program.directory, icsFile)}`);
   } else {
+    // A reused public/ may still hold the file from a build that had a date.
+    await fs.promises.rm(icsFile, { force: true });
     reporter.info("event-data.json has no exact date yet, so no calendar file was written");
   }
 
