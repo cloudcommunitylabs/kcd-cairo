@@ -138,6 +138,13 @@ Deployment mirrors [kcd-new-york](https://github.com/cloudcommunitylabs/kcd-new-
 - Pull request against `main` → preview deployment; the workflow comments the preview URL on the PR.
 - `workflow_dispatch` → manual run.
 
+**Deploy order**
+
+- Production deploys run one at a time. A deploy that has started always finishes. If more merges land meanwhile, only the newest waiting run is kept; the others show as *cancelled* in the Actions tab, which is expected.
+- Each production run builds the newest commit on `main` when it starts, not the commit that triggered it, so the site always ends up on the latest `main`. Re-running an old run redeploys the latest `main`; it can't bring back an older version.
+- To roll back, use *Rollback* on an earlier deployment in the Cloudflare Pages dashboard for an immediate fix, then revert the change on `main` so the next deploy doesn't bring it back.
+- Each pull request's preview runs in its own lane, so previews never hold up production. A new push to a PR cancels that PR's older preview run.
+
 **One-time setup**
 
 1. In the Cloudflare dashboard create a Pages project named **`kcd-cairo-2027`** (Direct Upload; no Git integration needed). To use a different name, change `CLOUDFLARE_PAGES_PROJECT` in the workflow.

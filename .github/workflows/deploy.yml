@@ -12,6 +12,16 @@ on:
 env:
   CLOUDFLARE_PAGES_PROJECT: kcd-cairo-2027
 
+# One deploy per target at a time. github.ref is refs/heads/main for production
+# (push or manual run) and refs/pull/<number>/merge for each pull request.
+# - main: a deploy that has started always finishes; of the runs waiting behind
+#   it, GitHub keeps only the newest and cancels the rest.
+# - pull requests: each PR has its own lane, so previews never hold up
+#   production, and a new push cancels that PR's older preview run.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,8 +29,23 @@ jobs:
       contents: read
       pull-requests: write
     steps:
+      # Pull requests build the commit that triggered the run. Pushes and manual
+      # runs build the newest commit on the branch at the moment the run starts,
+      # so a run that waited in the queue, or a re-run of an old run, can never
+      # put an older version of the site back.
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name != 'pull_request' && github.ref || '' }}
+
+      - name: Note which commit is deployed
+        if: github.event_name != 'pull_request'
+        run: |
+          built="$(git rev-parse HEAD)"
+          if [ "$built" != "$GITHUB_SHA" ]; then
+            echo "::notice::${GITHUB_REF_NAME} moved on after this run was triggered by ${GITHUB_SHA:0:7}. Deploying the newest commit, ${built:0:7}, instead."
+          fi
+          echo "Deploying \`${built:0:7}\` from \`${GITHUB_REF_NAME}\` (run triggered by \`${GITHUB_SHA:0:7}\`)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
