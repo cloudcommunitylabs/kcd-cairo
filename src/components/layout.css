@@ -767,6 +767,10 @@ section[id] {
   white-space: nowrap;
 }
 
+.kcd-button .kcd-nowrap {
+  white-space: nowrap;
+}
+
 /* Text for screen readers only */
 .kcd-sr-only {
   position: absolute;

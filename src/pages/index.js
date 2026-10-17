@@ -282,7 +282,7 @@ export default function IndexPage() {
                   ? "The exact date will be confirmed soon. Bookmark this page and check back."
                   : "The exact date and venue will be confirmed soon. Bookmark this page and check back."
                 : !lifecycle.isRegistrationOpen && !lifecycle.isCfpOpen
-                  ? `Registration and the call for proposals open soon. Add ${eventData.name} to your calendar so you don't miss it.`
+                  ? `Registration and the call for proposals open soon. Add ${eventData.name.replace(/ /g, "\u00a0")} to your calendar so you don't miss it.`
                   : "Add it to your calendar and we'll see you there."}
             </p>
             {lifecycle.hasExactDate && (
@@ -294,7 +294,9 @@ export default function IndexPage() {
                 </a>
                 <a href={CALENDAR_FILE} className="kcd-button kcd-button-ghost" type="text/calendar">
                   <DownloadIcon />
-                  Download calendar file (.ics)
+                  <span>
+                    Download calendar <span className="kcd-nowrap">file (.ics)</span>
+                  </span>
                 </a>
               </div>
             )}

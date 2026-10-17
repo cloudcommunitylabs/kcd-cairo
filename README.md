@@ -81,7 +81,7 @@ Leave a link as an empty string (`""`) to keep it hidden.
 
 ### 📅 Add to calendar
 
-Once `date.iso` is set, the navy band shows **Add to Google Calendar** and **Download .ics** buttons for an all-day entry (no session times). Both come from `src/utils/event-details.js`, the same helper that decides whether the venue is shown:
+Once `date.iso` is set, the navy band shows **Add to Google Calendar** and **Download calendar file (.ics)** buttons for an all-day entry (no session times). Both come from `src/utils/event-details.js`, the same helper that decides whether the venue is shown:
 
 - The Google Calendar button is a `calendar.google.com/calendar/render?action=TEMPLATE` link with the date, the site URL and (only when `announceVenue` is `true`) the venue.
 - The `.ics` file is generated at build time by `gatsby-node.js` (`onPostBuild`) into `public/kcd-cairo-2027.ics` (an RFC 5545 all-day event), and served at the same path by `yarn develop`. It is not committed; edit `event-data.json` and rebuild. `static/_headers` tells Cloudflare Pages to serve it as `text/calendar`.

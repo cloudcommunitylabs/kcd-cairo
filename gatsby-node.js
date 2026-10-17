@@ -20,14 +20,18 @@ const path = require("path");
 const eventData = require("./src/content/event-data.json");
 const { buildIcs, getCalendarFileName, hasVenue } = require("./src/utils/event-details");
 
-const LEAK_CHECK_EXTENSIONS = new Set([".html", ".js", ".map", ".json", ".css", ".ics", ".txt", ".xml"]);
+// Every built file is scanned except binary assets.
+const LEAK_CHECK_SKIP_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".avif", ".ico",
+  ".woff", ".woff2", ".ttf", ".otf", ".eot", ".pdf", ".mp4", ".webm",
+]);
 
 function* walkFiles(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       yield* walkFiles(full);
-    } else if (LEAK_CHECK_EXTENSIONS.has(path.extname(entry.name))) {
+    } else if (!LEAK_CHECK_SKIP_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
       yield full;
     }
   }

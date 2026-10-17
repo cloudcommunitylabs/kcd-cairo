@@ -216,6 +216,9 @@ function buildIcs(eventData, siteUrl, now) {
     "BEGIN:VEVENT",
     `UID:${event.uid}`,
     `DTSTAMP:${formatStamp(now || new Date())}`,
+    // Bumped when the venue is announced, so calendar apps that already
+    // imported this UID take the updated entry (with LOCATION) over the old one.
+    `SEQUENCE:${event.location ? 1 : 0}`,
     `DTSTART;VALUE=DATE:${event.start}`,
     `DTEND;VALUE=DATE:${event.end}`,
     `SUMMARY:${escapeText(event.summary)}`,
