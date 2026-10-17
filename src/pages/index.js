@@ -104,18 +104,8 @@ export const Head = () => {
   return (
     <Seo>
       <script type="application/ld+json">{JSON.stringify(schema)}</script>
-      {newsletterReady && (
-        <>
-          {/* Begin Constant Contact Active Forms (universal code) */}
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `var _ctct_m = ${JSON.stringify(eventData.newsletter.constantContactAccountId)};`,
-            }}
-          />
-          <script id="signupScript" src={NEWSLETTER_WIDGET_SRC} async defer />
-          {/* End Constant Contact Active Forms */}
-        </>
-      )}
+      {/* The sign-up widget itself is loaded by NewsletterSignup once the section mounts */}
+      {newsletterReady && <link rel="preconnect" href={new URL(NEWSLETTER_WIDGET_SRC).origin} />}
     </Seo>
   );
 };

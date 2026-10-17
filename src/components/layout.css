@@ -974,6 +974,50 @@ section[id] {
   color: var(--muted);
 }
 
+/* Placeholder while the widget fills .ctct-inline-form (a sibling, never inside it) */
+.kcd-updates-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  /* Close to the rendered form's height, so the card barely moves when it appears */
+  min-height: 25rem;
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ctct-inline-form:empty + .kcd-updates-loading {
+  display: flex;
+}
+
+/* Without JavaScript the <noscript> message is shown instead */
+.kcd-updates-card:has(.kcd-updates-noscript) .kcd-updates-loading {
+  display: none;
+}
+
+.kcd-updates-spinner {
+  flex: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 3px solid var(--kcd-blue-soft);
+  border-top-color: var(--kcd-blue);
+  border-radius: 50%;
+  animation: kcd-spin 0.8s linear infinite;
+}
+
+@keyframes kcd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 600px) {
+  .kcd-updates-loading {
+    min-height: 31rem;
+  }
+}
+
 @media (max-width: 900px) {
   .kcd-updates-grid {
     grid-template-columns: 1fr;
@@ -1097,6 +1141,10 @@ section[id] {
   .kcd-nav-badge::before,
   .kcd-cloud,
   .kcd-about-logo img {
+    animation: none;
+  }
+
+  .kcd-updates-spinner {
     animation: none;
   }
 
