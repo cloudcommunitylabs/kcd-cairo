@@ -1,7 +1,11 @@
+import { hasExactDate, hasVenue } from "./event-details";
+
 /**
  * Derives which parts of the site are ready to show from event-data.json.
  * A link that is an empty string is treated as "not ready yet" and the
  * matching call to action stays hidden until it is filled in.
+ * The venue is only shown when location.announceVenue is true (see
+ * ./event-details.js, which every venue mention goes through).
  */
 const hasLink = (value) => typeof value === "string" && value.trim().length > 0;
 
@@ -21,8 +25,8 @@ export function getEventLifecycle(eventData) {
     hasCncfCommunity: hasLink(links.cncfCommunity),
     hasWebsite: hasLink(links.website),
     hasAnySocial: hasLink(links.linkedin) || hasLink(links.twitter) || hasLink(links.cncfCommunity),
-    hasVenue: hasLink((eventData.location || {}).venue),
-    hasExactDate: hasLink((eventData.date || {}).iso),
+    hasVenue: hasVenue(eventData),
+    hasExactDate: hasExactDate(eventData),
     showAbout: sections.about !== false,
     showGetInvolved: sections.getInvolved !== false,
     showKeyDates: sections.keyDates === true && Array.isArray(eventData.keyDates) && eventData.keyDates.length > 0,

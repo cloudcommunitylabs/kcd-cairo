@@ -16,7 +16,7 @@ const LOCKUP_WHITE = "/brand/kcd-cairo-lockup-white.svg";
 export default function Layout({ children }) {
   const [isOpen, setIsOpen] = React.useState(false);
   const lifecycle = getEventLifecycle(eventData);
-  const { links } = eventData;
+  const { links, date } = eventData;
 
   const navItems = [
     { to: "/", label: "Home", show: true },
@@ -80,7 +80,12 @@ export default function Layout({ children }) {
                 Register
               </a>
             )}
-            {!lifecycle.isRegistrationOpen && lifecycle.isComingSoon && (
+            {!lifecycle.isRegistrationOpen && lifecycle.hasExactDate && (
+              <span className="kcd-nav-badge">
+                <time dateTime={date.iso}>{date.short || date.display}</time>
+              </span>
+            )}
+            {!lifecycle.isRegistrationOpen && !lifecycle.hasExactDate && lifecycle.isComingSoon && (
               <span className="kcd-nav-badge">Coming soon</span>
             )}
           </nav>

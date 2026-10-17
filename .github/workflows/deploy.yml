@@ -74,7 +74,7 @@ jobs:
             - **404 page:** ${previewUrl}/this-page-does-not-exist
 
             ### What to Check:
-            - ✅ Hero shows "KCD Cairo 2027", "Coming soon", date and location
+            - ✅ Hero shows "KCD Cairo 2027", the status pill ("Save the date" once the date is set), date and location
             - ✅ Only links that are filled in \`src/content/event-data.json\` are visible
             - ✅ Responsive design on mobile/tablet/desktop
             - ✅ Mobile navigation toggle (when more than one nav item is enabled)

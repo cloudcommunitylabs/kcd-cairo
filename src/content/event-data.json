@@ -5,18 +5,22 @@
   "year": 2027,
   "status": "coming-soon",
   "tagline": "The cloud native community is coming to Cairo.",
-  "description": "Kubernetes Community Days Cairo 2027 is a community-organized, CNCF-supported event bringing together adopters, contributors and technologists from the open source and cloud native ecosystem in Egypt and the region. Dates, venue, call for proposals, sponsorship and registration will be announced here.",
+  "description": "Kubernetes Community Days Cairo 2027 is a community-organized, CNCF-supported event bringing together adopters, contributors and technologists from the open source and cloud native ecosystem in Egypt and the region. The call for proposals, sponsorship and registration will be announced here.",
   "date": {
-    "display": "April 2027",
-    "iso": "",
-    "note": "Exact date to be announced"
+    "display": "Friday 16 April 2027",
+    "short": "16 April 2027",
+    "iso": "2027-04-16",
+    "note": ""
   },
   "location": {
     "city": "Cairo",
     "country": "Egypt",
-    "venue": "",
+    "countryCode": "EG",
+    "venue": "Grand Egyptian Museum",
+    "area": "Giza",
     "address": "",
-    "note": "Venue to be announced"
+    "announceVenue": false,
+    "note": ""
   },
   "links": {
     "website": "",
@@ -36,7 +40,7 @@
     "constantContactFormId": "a539b1a8-b115-4dec-9f68-e4b018488b17",
     "constantContactAccountId": "26e3db1f65849647142c97ca07e9886a",
     "title": "Get KCD Cairo updates",
-    "text": "Be the first to hear when the date is locked in, the call for proposals opens and tickets go on sale. No spam, unsubscribe any time."
+    "text": "Be the first to hear when the call for proposals opens and tickets go on sale. No spam, unsubscribe any time."
   },
   "sections": {
     "about": true,

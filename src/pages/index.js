@@ -3,11 +3,32 @@ import Layout from "../components/layout";
 import Seo from "../components/seo";
 import eventData from "../content/event-data.json";
 import { getEventLifecycle } from "../utils/event-lifecycle";
+import { getCalendarFileName, getEventDates, getEventPlace, getGoogleCalendarUrl } from "../utils/event-details";
+import useSiteUrl from "../hooks/use-site-url";
 import NewsletterSignup, { NEWSLETTER_WIDGET_SRC, hasNewsletterForm } from "../components/newsletter-signup";
 
 const SKYLINE = "/brand/kcd-cairo-skyline.svg";
 const LOCKUP_WHITE = "/brand/kcd-cairo-lockup-white.svg";
 const LOGO_ROUND = "/brand/kcd-cairo-logo-round.svg";
+
+// Date and place as published (the venue only when location.announceVenue is true).
+const eventDates = getEventDates(eventData);
+const place = getEventPlace(eventData);
+const CALENDAR_FILE = `/${getCalendarFileName(eventData)}`;
+
+// "Friday 16 April 2027" -> keep "16 April 2027" on one line, so a narrow band
+// breaks after the weekday instead of leaving the year on its own line.
+const bandDate = (display) => {
+  const [weekday, ...rest] = display.split(" ");
+  if (!rest.length) {
+    return display;
+  }
+  return (
+    <>
+      {weekday} <span className="kcd-nowrap">{rest.join(" ")}</span>
+    </>
+  );
+};
 
 const Cloud = ({ className }) => (
   <svg className={`kcd-cloud ${className}`} viewBox="0 0 90 44" aria-hidden="true" focusable="false">
@@ -25,6 +46,12 @@ const CalendarIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <rect x="3" y="4" width="18" height="17" rx="2" />
     <path d="M16 2v4M8 2v4M3 10h18" />
+  </svg>
+);
+
+const DownloadIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
   </svg>
 );
 
@@ -79,15 +106,16 @@ export const Head = () => {
     "@type": "Event",
     name: eventData.fullName,
     description: eventData.description,
+    url: useSiteUrl(),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     location: {
       "@type": "Place",
-      name: eventData.location.venue || `${eventData.location.city}, ${eventData.location.country}`,
+      name: place.name,
       address: {
         "@type": "PostalAddress",
-        addressLocality: eventData.location.city,
-        addressCountry: eventData.location.country,
+        addressLocality: place.locality,
+        addressCountry: place.countryCode || place.country,
       },
     },
     organizer: {
@@ -95,8 +123,9 @@ export const Head = () => {
       name: eventData.shortName,
     },
   };
-  if (eventData.date.iso) {
-    schema.startDate = eventData.date.iso;
+  if (eventDates) {
+    schema.startDate = eventDates.start;
+    schema.endDate = eventDates.end;
   }
 
   const newsletterReady = hasNewsletterForm(eventData.newsletter);
@@ -125,6 +154,7 @@ export default function IndexPage() {
   const { links, date, location } = eventData;
 
   const newsletterReady = hasNewsletterForm(eventData.newsletter);
+  const googleCalendarUrl = getGoogleCalendarUrl(eventData, useSiteUrl());
 
   const primaryActions = [
     lifecycle.isRegistrationOpen && { href: links.registration, label: "Register now", kind: "primary" },
@@ -157,7 +187,7 @@ export default function IndexPage() {
           {lifecycle.isComingSoon && (
             <p className="kcd-coming-soon" role="status">
               <span className="kcd-pulse" aria-hidden="true" />
-              Coming soon
+              {lifecycle.hasExactDate ? "Save the date" : "Coming soon"}
             </p>
           )}
           <p className="kcd-hero-tagline">{eventData.tagline}</p>
@@ -170,7 +200,7 @@ export default function IndexPage() {
               <div>
                 <dt>When</dt>
                 <dd>
-                  {date.display}
+                  {lifecycle.hasExactDate ? <time dateTime={eventDates.start}>{date.display}</time> : date.display}
                   {!lifecycle.hasExactDate && date.note && <small>{date.note}</small>}
                 </dd>
               </div>
@@ -182,7 +212,8 @@ export default function IndexPage() {
               <div>
                 <dt>Where</dt>
                 <dd>
-                  {lifecycle.hasVenue ? location.venue : `${location.city}, ${location.country}`}
+                  {place.name}
+                  {place.detail && <small>{place.detail}</small>}
                   {!lifecycle.hasVenue && location.note && <small>{location.note}</small>}
                 </dd>
               </div>
@@ -235,15 +266,38 @@ export default function IndexPage() {
             <img src={LOCKUP_WHITE} alt="" width="300" height="86" />
           </div>
           <div className="kcd-band-copy">
-            <p className="kcd-eyebrow">Save the month</p>
+            <p className="kcd-eyebrow">{lifecycle.hasExactDate ? "Save the date" : "Save the month"}</p>
             <p className="kcd-band-date">
-              {date.display} <span>·</span> {location.city}, {location.country}
+              {lifecycle.hasExactDate ? (
+                <time dateTime={eventDates.start}>{bandDate(date.display)}</time>
+              ) : (
+                date.display
+              )}
+              <span className="kcd-band-sep"> · </span>
+              <span className="kcd-band-place">{place.short}</span>
             </p>
             <p className="kcd-band-note">
-              {lifecycle.hasExactDate
-                ? "Add it to your calendar and we'll see you there."
-                : "The exact date and venue will be confirmed soon. Bookmark this page and check back."}
+              {!lifecycle.hasExactDate
+                ? lifecycle.hasVenue
+                  ? "The exact date will be confirmed soon. Bookmark this page and check back."
+                  : "The exact date and venue will be confirmed soon. Bookmark this page and check back."
+                : !lifecycle.isRegistrationOpen && !lifecycle.isCfpOpen
+                  ? `Registration and the call for proposals open soon. Add ${eventData.name} to your calendar so you don't miss it.`
+                  : "Add it to your calendar and we'll see you there."}
             </p>
+            {lifecycle.hasExactDate && (
+              <div className="kcd-band-actions">
+                <a href={googleCalendarUrl} className="kcd-button kcd-button-accent" target="_blank" rel="noopener noreferrer">
+                  <CalendarIcon />
+                  Add to Google Calendar
+                  <span className="kcd-sr-only"> (opens in a new tab)</span>
+                </a>
+                <a href={CALENDAR_FILE} className="kcd-button kcd-button-ghost" type="text/calendar">
+                  <DownloadIcon />
+                  Download calendar file (.ics)
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </section>
