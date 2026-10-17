@@ -30,8 +30,6 @@ const STOP_CHECKING_AFTER_MS = 60000;
 const MAX_MAIN_CALLS = 2;
 // Only used if the widget stops exposing jQuery.active (see renderPassPending).
 const FALLBACK_PASS_MS = 5000;
-// A render pass whose request has stalled this long no longer blocks a retry.
-const STALLED_PASS_MS = 10000;
 
 export function hasNewsletterForm(newsletter) {
   return Boolean(
@@ -39,9 +37,10 @@ export function hasNewsletterForm(newsletter) {
   );
 }
 
+/** Adds the widget script unless a tag for it is already in the page. Returns true if it added one. */
 function loadWidgetScript() {
   if (document.querySelector(`script[src="${NEWSLETTER_WIDGET_SRC}"]`)) {
-    return;
+    return false;
   }
   const script = document.createElement("script");
   script.src = NEWSLETTER_WIDGET_SRC;
@@ -53,6 +52,7 @@ function loadWidgetScript() {
   // has to stay in the page: <body> is outside both React's root and the
   // <head> tags Gatsby manages.
   document.body.appendChild(script);
+  return true;
 }
 
 let lastPassStartedAt = 0;
@@ -66,12 +66,13 @@ let lastPassStartedAt = 0;
  * (exposed as window.jQuery) counts outstanding requests in jQuery.active.
  */
 function renderPassPending() {
-  const sincePass = Date.now() - lastPassStartedAt;
   const jq = window.jQuery;
   if (jq && typeof jq.active === "number") {
-    return jq.active > 0 && sincePass < STALLED_PASS_MS;
+    // No time limit: a slow but healthy config request still renders when it
+    // lands, so starting another pass meanwhile would render the div twice.
+    return jq.active > 0;
   }
-  return sincePass < FALLBACK_PASS_MS;
+  return Date.now() - lastPassStartedAt < FALLBACK_PASS_MS;
 }
 
 export default function NewsletterSignup({ newsletter }) {
@@ -101,9 +102,10 @@ export default function NewsletterSignup({ newsletter }) {
       if (widget === undefined) {
         // First visit: once loaded, the widget's start-up pass finds this div.
         // One attempt per mount, so a failed load is not retried every tick.
+        // A tag added by an earlier mount doesn't count: if that load fails,
+        // its tag is removed and this mount gets its own attempt.
         if (!triedLoading) {
-          triedLoading = true;
-          loadWidgetScript();
+          triedLoading = loadWidgetScript();
         }
       } else if (typeof widget.main === "function") {
         if (!lastPassStartedAt) {

@@ -981,7 +981,7 @@ section[id] {
   justify-content: center;
   gap: 0.75rem;
   /* Close to the rendered form's height, so the card barely moves when it appears */
-  min-height: 25rem;
+  min-height: 26rem;
   margin: 0;
   color: var(--muted);
   text-align: center;
@@ -1014,7 +1014,7 @@ section[id] {
 
 @media (max-width: 600px) {
   .kcd-updates-loading {
-    min-height: 31rem;
+    min-height: 32.5rem;
   }
 }
 
