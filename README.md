@@ -81,7 +81,18 @@ The sign-up form is Constant Contact's inline form. Two values in `src/content/e
 - `constantContactFormId` — the `data-form-id` from the form's inline code (`<div class="ctct-inline-form" data-form-id="…">`).
 - `constantContactAccountId` — the `_ctct_m` value from the account's **Universal Code** (Constant Contact → Sign-up Forms → your form → Inline code → *Universal Code*, the line `var _ctct_m = "…"`).
 
-The widget script cannot render without `_ctct_m`, so the section, the hero button and the scripts only appear once **both** values are set. The widget loads from `static.ctctcdn.com`; the page ships no other third-party script.
+The widget cannot render without `_ctct_m`, so the section, the hero button and the widget only appear once **both** values are set.
+
+How the widget is loaded (`src/components/newsletter-signup.js`):
+
+- The server-rendered HTML puts nothing from Constant Contact in `<head>` except a `preconnect` to `static.ctctcdn.com`: no `_ctct_m` snippet and no widget `<script>`. (Once running, the widget adds its own jQuery `<script>` and `<style>` tags.)
+- Once the section has mounted (after React hydration), the component sets `window._ctct_m` and adds the widget script to `<body>`, once per page load. The widget then renders the form into the empty `<div class="ctct-inline-form">`, which React never renders into.
+- The widget only looks for that div when it starts. When the section mounts again after client-side navigation (for example the 404 page's **Back to home** link), the component calls `SignUpFormWidget.main()` to render the form again. It only does this while the div is empty and no other render pass is still waiting for its config, so the form never gets rendered twice or gets two submit handlers.
+- Until the form appears, the card shows a loading placeholder. After 15 seconds it becomes a hint to refresh the page or allow Constant Contact (`ctctcdn.com`) in content blockers. If the widget script fails to load, the next visit to the section tries again.
+
+Don't paste Constant Contact's universal code or widget `<script>` into a `Head` export or `gatsby-ssr.js`. In `<head>` the widget can render before React hydrates, and React then throws the form away; on client-side navigation Gatsby runs the script again and the widget refuses to load twice ("Universal code snippet was installed more than once"), so the form stays missing until a refresh.
+
+The widget loads from `static.ctctcdn.com` and pulls in its own dependencies (jQuery and Underscore from `cdnjs.cloudflare.com`, reCAPTCHA from `google.com`); the site ships no other third-party script.
 
 ### Branding
 
