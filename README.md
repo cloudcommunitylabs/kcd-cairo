@@ -138,6 +138,16 @@ Deployment mirrors [kcd-new-york](https://github.com/cloudcommunitylabs/kcd-new-
 - Pull request against `main` → preview deployment; the workflow comments the preview URL on the PR.
 - `workflow_dispatch` → manual run.
 
+**Deploy order**
+
+- Production deploys run one at a time. A deploy that has started always finishes. If more merges land meanwhile, only the newest waiting run is kept; the others show as *cancelled* in the Actions tab, which is expected.
+- A production run deploys only if its commit is still the newest on `main` when it starts. If `main` has moved on (the run waited in the queue, or it's a re-run of an older run), it skips the deploy and starts a fresh run on `main`, so the site never goes back to an older version and catches up to the latest `main`.
+- To redeploy, use **Run workflow** on `main` in the Actions tab rather than re-running an old run; runs from before October 2026 don't have these checks. Don't cancel a waiting production run, because it's the one that will deploy the newest merge. If one was cancelled, use Run workflow on `main` to catch up.
+- If the newest `main` doesn't build, production stays on its last good deploy until `main` is fixed or the change is reverted.
+- To roll back, use *Rollback* on an earlier deployment in the Cloudflare Pages dashboard for an immediate fix, then revert the change on `main` so the next deploy doesn't bring it back.
+- Each pull request's preview runs in its own lane, so previews never hold up production. A new push to a PR cancels that PR's older preview run. Pull requests from forks build but skip the preview, since they don't get the Cloudflare secrets.
+- A run that takes longer than 30 minutes is cancelled, so a stuck run can't hold up production.
+
 **One-time setup**
 
 1. In the Cloudflare dashboard create a Pages project named **`kcd-cairo-2027`** (Direct Upload; no Git integration needed). To use a different name, change `CLOUDFLARE_PAGES_PROJECT` in the workflow.

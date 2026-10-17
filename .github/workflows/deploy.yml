@@ -12,30 +12,97 @@ on:
 env:
   CLOUDFLARE_PAGES_PROJECT: kcd-cairo-2027
 
+# One deploy per lane at a time:
+# - Production (pushes and manual runs on main) shares one lane. A deploy that
+#   has started always finishes; of the runs waiting behind it, GitHub keeps
+#   only the newest and cancels the rest.
+# - Each pull request has its own lane, so previews never hold up production,
+#   and a new push cancels that PR's older preview run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # A normal run takes about 5 minutes. A stuck run is cancelled so it can't
+    # hold up the production lane.
+    timeout-minutes: 30
     permissions:
+      actions: write # start a fresh run when this one is superseded
       contents: read
       pull-requests: write
     steps:
+      # A production run deploys only if its commit is still the newest on main
+      # when the run starts. Otherwise (it waited in the queue, or it is a
+      # re-run of an older run) it deploys nothing and starts a fresh run on
+      # main, which builds the newest commit with the newest copy of this
+      # workflow. Production never goes back to an older version and always
+      # catches up to the latest main.
+      - name: Check this is still the newest commit
+        id: freshness
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Retry API calls a few times so a brief GitHub hiccup doesn't stop a
+          # deploy. If one still fails, nothing is deployed and the run fails.
+          retry() { for i in 1 2 3; do "$@" && return 0; sleep $((i * 5)); done; return 1; }
+          newest_on_main() {
+            local sha
+            sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)" && echo "$sha"
+          }
+
+          latest="$(retry newest_on_main)" || {
+            echo "::error::Couldn't read the newest commit on main, so nothing was deployed. Re-run this run."
+            exit 1
+          }
+          if [ "$latest" = "$GITHUB_SHA" ]; then
+            echo "Deploying \`${GITHUB_SHA:0:7}\`, the newest commit on \`main\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          workflow_file="${GITHUB_WORKFLOW_REF%%@*}"
+          retry gh workflow run "${workflow_file##*/}" --repo "$GITHUB_REPOSITORY" --ref main || {
+            echo "::error::main has moved on to ${latest:0:7}, but starting a fresh run failed. Use Run workflow on main."
+            exit 1
+          }
+          echo "superseded=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::main has moved on from ${GITHUB_SHA:0:7} to ${latest:0:7}. Skipped this deploy and started a fresh run for the newest commit."
+          echo "Skipped: \`main\` has moved on from \`${GITHUB_SHA:0:7}\` to \`${latest:0:7}\`. Started a fresh run to deploy it." >> "$GITHUB_STEP_SUMMARY"
+
+      # Nothing after checkout needs git credentials, so don't leave the token
+      # in .git/config where build and dependency code could read it.
       - name: Checkout
+        if: steps.freshness.outputs.superseded != 'true'
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
+        if: steps.freshness.outputs.superseded != 'true'
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'yarn'
 
       - name: Install dependencies
+        if: steps.freshness.outputs.superseded != 'true'
         run: yarn install --frozen-lockfile --network-timeout 600000
 
       - name: Build Gatsby site
+        if: steps.freshness.outputs.superseded != 'true'
         run: yarn build
 
+      # Pull requests from forks get no Cloudflare secrets, so they build but
+      # skip the preview. This also keeps a fork's "main" branch from ever
+      # being deployed as --branch=main, which Cloudflare treats as production.
       - name: Deploy to Cloudflare Pages
         id: deploy
+        if: >-
+          steps.freshness.outputs.superseded != 'true' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -43,7 +110,7 @@ jobs:
           command: pages deploy public --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=${{ github.head_ref || github.ref_name }}
 
       - name: Comment on PR with deployment URL
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.deploy.outcome == 'success'
         uses: actions/github-script@v7
         env:
           PROJECT_NAME: ${{ env.CLOUDFLARE_PAGES_PROJECT }}
