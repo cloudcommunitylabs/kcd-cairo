@@ -1,6 +1,6 @@
 # KCD Cairo 2027 Website
 
-Official website for **Kubernetes Community Days Cairo 2027**, part of the [CNCF Kubernetes Community Days](https://www.cncf.io/kcds/) program. KCD Cairo is on the [CNCF H1 2027 KCD calendar](https://www.cncf.io/blog/2026/08/20/announcing-h1-2027-kcds/) for **April 2027**.
+Official website for **Kubernetes Community Days Cairo 2027**, part of the [CNCF Kubernetes Community Days](https://www.cncf.io/kcds/) program. KCD Cairo is on the [CNCF H1 2027 KCD calendar](https://www.cncf.io/blog/2026/08/20/announcing-h1-2027-kcds/) and takes place on **Friday 16 April 2027**.
 
 The site currently serves a **"coming soon" landing page**. The full event template that this repo was created from (FNTech / OpenEventKit) is still in the repo, just switched off until we are ready to fill it in (see [Full event template](#-full-event-template-openeventkit)).
 
@@ -30,6 +30,7 @@ If you hit cache or module errors, run `yarn gatsby-clean` and try again.
 kcd-cairo/
 ├── .github/workflows/deploy.yml   # Build + deploy to Cloudflare Pages
 ├── gatsby-config.js               # Site metadata; loads the full template only when ENABLE_EVENT_SITE=true
+├── gatsby-node.js                 # Writes the .ics calendar file; keeps an unannounced venue out of the JS bundle
 ├── src/
 │   ├── content/
 │   │   ├── event-data.json        # ★ Single source of truth for the landing page (dates, links, sections)
@@ -39,6 +40,8 @@ kcd-cairo/
 │   │   ├── layout.css             # Landing page styles and brand colours
 │   │   └── seo.js                 # <head> metadata
 │   ├── utils/event-lifecycle.js   # Decides which links/sections are ready to show
+│   ├── utils/event-details.js     # Date, venue (announceVenue) and calendar helpers
+│   ├── hooks/use-site-url.js      # siteMetadata.siteUrl for structured data and calendar links
 │   └── pages/
 │       ├── index.js               # Coming-soon landing page
 │       ├── 404.js                 # Not-found page
@@ -59,8 +62,10 @@ Everything visible on the landing page is driven by **`src/content/event-data.js
 
 | Field | What it controls |
 | --- | --- |
-| `date.display`, `date.note` | The "When" text in the hero (e.g. `April 2027`). Set `date.iso` (e.g. `2027-04-17`) once the exact date is confirmed; the note disappears and structured data gets a start date. |
-| `location.venue`, `location.address` | The "Where" text. While `venue` is empty the page shows `Cairo, Egypt` and the "to be announced" note. |
+| `date.display`, `date.short`, `date.iso`, `date.note` | `display` is the full date in the hero, the navy "Save the date" band and the meta description (e.g. `Friday 16 April 2027`); `short` is the compact form in the navbar badge (e.g. `16 April 2027`). `iso` (`YYYY-MM-DD`) marks the exact date as confirmed: it switches the "Coming soon" labels to "Save the date", sets the structured data start/end date and turns on the calendar buttons and file (see below). While `iso` is empty, `display` holds the month (e.g. `April 2027`) and `note` is shown under it. |
+| `location.city`, `location.country`, `location.countryCode` | The event brand location (`Cairo, Egypt`), used in the hero eyebrow and wherever no venue is shown. `countryCode` (ISO 3166, e.g. `EG`) goes into the structured data. |
+| `location.venue`, `location.area`, `location.announceVenue` | The venue name and the area it is in (e.g. `Giza`), shown in the hero "Where", the navy band, the structured data, the meta description and the calendar entry. **`announceVenue`** must be `true` for the venue to appear anywhere; set it to `false` to hide the venue name everywhere on the built site (pages, structured data, meta description, calendar file and Google Calendar link) while keeping the date. The build fails if the venue name still turns up in `public/` while it is `false`. (The name still sits in this file in the public repo; only the built site hides it.) Without a venue the site shows `Cairo, Egypt`, and the venue fields are also stripped from the copy of this file bundled into the site's JavaScript (`src/utils/event-data-loader.js`). |
+| `location.address`, `location.note` | Reserved for a street address (not shown yet) and a note shown under "Where" while no venue is announced. |
 | `links.registration` | Shows the **Register** button in the navbar and hero. |
 | `links.cfp` | Shows **Call for Proposals** in the navbar and **Submit a talk** buttons. |
 | `links.sponsorProspectus` | Shows **Sponsor KCD Cairo** / **View the prospectus** buttons. |
@@ -69,10 +74,19 @@ Everything visible on the landing page is driven by **`src/content/event-data.js
 | `links.linkedin`, `links.twitter`, `links.cncfCommunity` | Social links in the hero and footer. |
 | `sections.*` | Toggle whole sections (`about`, `getInvolved`, `keyDates`, `sponsors`, `speakers`, `schedule`, `team`, `legal`). Navigation items for `schedule`/`speakers`/`sponsors`/`team` only appear when the section is enabled *and* a matching page exists. |
 | `keyDates` | Array of `{ "date": "...", "label": "..." }` shown when `sections.keyDates` is `true`. |
-| `status` | Set to anything other than `coming-soon` to remove the "Coming soon" badges. |
+| `status` | Set to anything other than `coming-soon` to remove the hero status pill ("Coming soon", or "Save the date" once `date.iso` is set). Until registration opens, the navbar badge shows `date.short` once the date is set, otherwise "Coming soon" while `status` is `coming-soon`. |
 | `newsletter.constantContactFormId`, `newsletter.constantContactAccountId` | The "Stay in the loop" sign-up section (Constant Contact inline form) plus a **Get updates** button in the hero. See [Email sign-up](#-email-sign-up-constant-contact). |
 
 Leave a link as an empty string (`""`) to keep it hidden.
+
+### 📅 Add to calendar
+
+Once `date.iso` is set, the navy band shows **Add to Google Calendar** and **Download calendar file (.ics)** buttons for an all-day entry (no session times). Both come from `src/utils/event-details.js`, the same helper that decides whether the venue is shown:
+
+- The Google Calendar button is a `calendar.google.com/calendar/render?action=TEMPLATE` link with the date, the site URL and (only when `announceVenue` is `true`) the venue.
+- The `.ics` file is generated at build time by `gatsby-node.js` (`onPostBuild`) into `public/kcd-cairo-2027.ics` (an RFC 5545 all-day event), and served at the same path by `yarn develop`. It is not committed; edit `event-data.json` and rebuild. `static/_headers` tells Cloudflare Pages to serve it as `text/calendar`.
+
+Both links use the site URL from `gatsby-config.js` (`GATSBY_SITE_URL`, defaulting to `https://kcd-cairo-2027.pages.dev`).
 
 ### 📬 Email sign-up (Constant Contact)
 
@@ -109,7 +123,7 @@ The site uses the official **KCD Cairo 2027** identity from the Canva logo pack 
 
 Brand colours are defined as CSS variables at the top of `src/components/layout.css`: KCD blue `#0087FF`, navy `#022150`, sky `#4EBBD5` / `#A9D9E3`, sand `#F5D57A` / `#EAC463`. The logo wordmark is set in THICCCBOI; the site uses self-hosted **Lexend** (display) and **Inter** (body) from `static/fonts/` as the closest open-licensed match, so no third-party font requests are made.
 
-`static/og-image.png` (1200×630) is the social sharing preview, composed from the same assets. Regenerate it if the date or slogan changes.
+`static/og-image.png` (1200×630) is the social sharing preview, composed from the same assets. Regenerate it if the date or slogan changes, and keep the venue name out of it so `location.announceVenue` stays the single switch for the venue.
 
 ---
 
