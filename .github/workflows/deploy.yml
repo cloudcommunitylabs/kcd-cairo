@@ -48,6 +48,7 @@ jobs:
         env:
           PROJECT_NAME: ${{ env.CLOUDFLARE_PAGES_PROJECT }}
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
         with:
           script: |
             const branchName = context.payload.pull_request.head.ref;
@@ -62,18 +63,18 @@ jobs:
               .replace(/^-+|-+$/g, '')
               .substring(0, 28)
               .replace(/-+$/g, '');
-            const aliasUrl = `https://${branchAlias}.${projectName}.pages.dev`;
-            // Branches whose names share the first 28 characters share one alias,
-            // so link this deployment's own URL and show the alias separately.
-            const deploymentUrl = (process.env.DEPLOYMENT_URL || '').replace(/\/+$/, '');
-            const previewUrl = deploymentUrl || aliasUrl;
+            // Cloudflare cuts the alias to 28 characters and adds a suffix when two
+            // branches collide, so prefer the URLs wrangler reports for this deploy.
+            const trim = (url) => (url || '').replace(/\/+$/, '');
+            const aliasUrl = trim(process.env.ALIAS_URL) || `https://${branchAlias}.${projectName}.pages.dev`;
+            const previewUrl = trim(process.env.DEPLOYMENT_URL) || aliasUrl;
 
             const comment = `## 🚀 Deployment Ready for Review
 
             Your branch has been deployed to Cloudflare Pages!
 
             **Preview URL:** ${previewUrl}
-            **Branch alias:** ${aliasUrl} (latest deploy of any branch starting \`${branchAlias}\`)
+            **Branch alias:** ${aliasUrl} (always the latest deploy of this branch)
 
             ### Pages to Review:
             - **Landing page (coming soon):** ${previewUrl}
