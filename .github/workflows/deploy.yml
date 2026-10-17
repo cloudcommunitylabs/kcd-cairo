@@ -33,31 +33,52 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      # A run for a push or manual run deploys only if its commit is still the
-      # newest on the branch when the run starts. Otherwise (it waited in the
-      # queue, or it is a re-run of an older run) it deploys nothing and starts
-      # a fresh run on the branch, which builds the newest commit with the
-      # newest copy of this workflow. Production never goes back to an older
-      # version and always catches up to the latest main.
+      # A production run deploys only if its commit is still the newest on main
+      # when the run starts. Otherwise (it waited in the queue, or it is a
+      # re-run of an older run) it deploys nothing and starts a fresh run on
+      # main, which builds the newest commit with the newest copy of this
+      # workflow. Production never goes back to an older version and always
+      # catches up to the latest main.
       - name: Check this is still the newest commit
         id: freshness
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        timeout-minutes: 5
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          latest="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/${GITHUB_REF#refs/}" --jq .object.sha)"
+          # Retry API calls a few times so a brief GitHub hiccup doesn't stop a
+          # deploy. If one still fails, nothing is deployed and the run fails.
+          retry() { for i in 1 2 3; do "$@" && return 0; sleep $((i * 5)); done; return 1; }
+          newest_on_main() {
+            local sha
+            sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq .object.sha)" && echo "$sha"
+          }
+
+          latest="$(retry newest_on_main)" || {
+            echo "::error::Couldn't read the newest commit on main, so nothing was deployed. Re-run this run."
+            exit 1
+          }
           if [ "$latest" = "$GITHUB_SHA" ]; then
-            echo "Deploying \`${GITHUB_SHA:0:7}\`, the newest commit on \`${GITHUB_REF_NAME}\`." >> "$GITHUB_STEP_SUMMARY"
+            echo "Deploying \`${GITHUB_SHA:0:7}\`, the newest commit on \`main\`." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
-          echo "superseded=true" >> "$GITHUB_OUTPUT"
-          echo "::notice::${GITHUB_REF_NAME} has moved on from ${GITHUB_SHA:0:7} to ${latest:0:7}. Skipped this deploy and started a fresh run for the newest commit."
-          echo "Skipped: \`${GITHUB_REF_NAME}\` has moved on from \`${GITHUB_SHA:0:7}\` to \`${latest:0:7}\`. Started a fresh run to deploy it." >> "$GITHUB_STEP_SUMMARY"
 
+          workflow_file="${GITHUB_WORKFLOW_REF%%@*}"
+          retry gh workflow run "${workflow_file##*/}" --repo "$GITHUB_REPOSITORY" --ref main || {
+            echo "::error::main has moved on to ${latest:0:7}, but starting a fresh run failed. Use Run workflow on main."
+            exit 1
+          }
+          echo "superseded=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::main has moved on from ${GITHUB_SHA:0:7} to ${latest:0:7}. Skipped this deploy and started a fresh run for the newest commit."
+          echo "Skipped: \`main\` has moved on from \`${GITHUB_SHA:0:7}\` to \`${latest:0:7}\`. Started a fresh run to deploy it." >> "$GITHUB_STEP_SUMMARY"
+
+      # Nothing after checkout needs git credentials, so don't leave the token
+      # in .git/config where build and dependency code could read it.
       - name: Checkout
         if: steps.freshness.outputs.superseded != 'true'
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         if: steps.freshness.outputs.superseded != 'true'
