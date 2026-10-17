@@ -12,55 +12,76 @@ on:
 env:
   CLOUDFLARE_PAGES_PROJECT: kcd-cairo-2027
 
-# One deploy per target at a time. github.ref is refs/heads/main for production
-# (push or manual run) and refs/pull/<number>/merge for each pull request.
-# - main: a deploy that has started always finishes; of the runs waiting behind
-#   it, GitHub keeps only the newest and cancels the rest.
-# - pull requests: each PR has its own lane, so previews never hold up
-#   production, and a new push cancels that PR's older preview run.
+# One deploy per lane at a time:
+# - Production (pushes and manual runs on main) shares one lane. A deploy that
+#   has started always finishes; of the runs waiting behind it, GitHub keeps
+#   only the newest and cancels the rest.
+# - Each pull request has its own lane, so previews never hold up production,
+#   and a new push cancels that PR's older preview run.
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # A normal run takes about 5 minutes. A stuck run is cancelled so it can't
+    # hold up the production lane.
+    timeout-minutes: 30
     permissions:
+      actions: write # start a fresh run when this one is superseded
       contents: read
       pull-requests: write
     steps:
-      # Pull requests build the commit that triggered the run. Pushes and manual
-      # runs build the newest commit on the branch at the moment the run starts,
-      # so a run that waited in the queue, or a re-run of an old run, can never
-      # put an older version of the site back.
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name != 'pull_request' && github.ref || '' }}
-
-      - name: Note which commit is deployed
+      # A run for a push or manual run deploys only if its commit is still the
+      # newest on the branch when the run starts. Otherwise (it waited in the
+      # queue, or it is a re-run of an older run) it deploys nothing and starts
+      # a fresh run on the branch, which builds the newest commit with the
+      # newest copy of this workflow. Production never goes back to an older
+      # version and always catches up to the latest main.
+      - name: Check this is still the newest commit
+        id: freshness
         if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          built="$(git rev-parse HEAD)"
-          if [ "$built" != "$GITHUB_SHA" ]; then
-            echo "::notice::${GITHUB_REF_NAME} moved on after this run was triggered by ${GITHUB_SHA:0:7}. Deploying the newest commit, ${built:0:7}, instead."
+          latest="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/${GITHUB_REF#refs/}" --jq .object.sha)"
+          if [ "$latest" = "$GITHUB_SHA" ]; then
+            echo "Deploying \`${GITHUB_SHA:0:7}\`, the newest commit on \`${GITHUB_REF_NAME}\`." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
           fi
-          echo "Deploying \`${built:0:7}\` from \`${GITHUB_REF_NAME}\` (run triggered by \`${GITHUB_SHA:0:7}\`)." >> "$GITHUB_STEP_SUMMARY"
+          gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"
+          echo "superseded=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::${GITHUB_REF_NAME} has moved on from ${GITHUB_SHA:0:7} to ${latest:0:7}. Skipped this deploy and started a fresh run for the newest commit."
+          echo "Skipped: \`${GITHUB_REF_NAME}\` has moved on from \`${GITHUB_SHA:0:7}\` to \`${latest:0:7}\`. Started a fresh run to deploy it." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout
+        if: steps.freshness.outputs.superseded != 'true'
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.freshness.outputs.superseded != 'true'
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'yarn'
 
       - name: Install dependencies
+        if: steps.freshness.outputs.superseded != 'true'
         run: yarn install --frozen-lockfile --network-timeout 600000
 
       - name: Build Gatsby site
+        if: steps.freshness.outputs.superseded != 'true'
         run: yarn build
 
+      # Pull requests from forks get no Cloudflare secrets, so they build but
+      # skip the preview. This also keeps a fork's "main" branch from ever
+      # being deployed as --branch=main, which Cloudflare treats as production.
       - name: Deploy to Cloudflare Pages
         id: deploy
+        if: >-
+          steps.freshness.outputs.superseded != 'true' &&
+          (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -68,7 +89,7 @@ jobs:
           command: pages deploy public --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }} --branch=${{ github.head_ref || github.ref_name }}
 
       - name: Comment on PR with deployment URL
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.deploy.outcome == 'success'
         uses: actions/github-script@v7
         env:
           PROJECT_NAME: ${{ env.CLOUDFLARE_PAGES_PROJECT }}
