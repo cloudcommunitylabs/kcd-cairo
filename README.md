@@ -194,7 +194,7 @@ The theme is **not loaded** by default because it needs a live OpenEvent summit 
 
 - A PR needs one approval, every review conversation resolved, and the `deploy` and `CodeRabbit` checks passing. Pushing new commits dismisses earlier approvals.
 - CodeRabbit gives that approval (`request_changes_workflow` in `.coderabbit.yaml`). It requests changes when it leaves inline comments, and approves once they're resolved, the latest commit has been reviewed and no pre-merge check is failing. An approval doesn't merge anything; someone with write access still clicks Merge.
-- Requiring the `CodeRabbit` check means CodeRabbit has to finish reviewing the latest commit before anyone can merge, even if a person has already approved. If it requested changes, that blocks the merge until it approves or someone with write access dismisses its review.
+- Requiring the `CodeRabbit` check means CodeRabbit has to finish reviewing the latest commit before anyone can merge, even if a person has already approved. Both required checks are pinned to the app that posts them (GitHub Actions and CodeRabbit), so nobody else can mark them as passed. If it requested changes, that blocks the merge until it approves or someone with write access dismisses its review.
 - PR authors can't force an approval with `@coderabbitai approve` (`allow_author_approval: false`). If CodeRabbit hasn't approved after its comments are resolved, comment `@coderabbitai review`. CodeRabbit also pauses after reviewing 5 commits on a PR; the same command gets the latest commit reviewed.
 - Repository admins can bypass the rules when merging a PR, for example during a CodeRabbit outage. Nobody can push straight to `main`, force-push it or delete it.
 
