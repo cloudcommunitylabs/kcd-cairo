@@ -29,6 +29,8 @@ If you hit cache or module errors, run `yarn gatsby-clean` and try again.
 ```
 kcd-cairo/
 ├── .github/workflows/deploy.yml   # Build + deploy to Cloudflare Pages
+├── .github/rulesets/main.json    # Branch ruleset for main (import it in Settings → Rules)
+├── .coderabbit.yaml               # CodeRabbit reviews, and approves PRs once its comments are resolved
 ├── gatsby-config.js               # Site metadata; loads the full template only when ENABLE_EVENT_SITE=true
 ├── gatsby-node.js                 # Writes the .ics calendar file; keeps an unannounced venue out of the JS bundle
 ├── src/
@@ -184,6 +186,18 @@ The theme is **not loaded** by default because it needs a live OpenEvent summit 
 1. Create a branch: `git checkout -b feature/your-change`
 2. Edit `src/content/event-data.json` or the page components and check with `yarn develop`.
 3. Open a pull request to `main`; the workflow posts a Cloudflare preview URL to review.
+4. CodeRabbit reviews the PR. Fix or reply to its comments; once they're resolved it approves, and the PR can be merged.
+
+**Reviews and merging**
+
+`main` is protected by the ruleset in `.github/rulesets/main.json`:
+
+- A PR needs one approval, every review conversation resolved, and the `deploy` check passing. Pushing new commits dismisses earlier approvals.
+- CodeRabbit gives that approval (`request_changes_workflow` in `.coderabbit.yaml`). It requests changes when it leaves inline comments, and approves once they're resolved, the latest commit has been reviewed and no pre-merge check is failing. An approval doesn't merge anything; someone with write access still clicks Merge.
+- PR authors can't force an approval with `@coderabbitai approve` (`allow_author_approval: false`). If CodeRabbit hasn't approved after its comments are resolved, comment `@coderabbitai review`. CodeRabbit also pauses after reviewing 5 commits on a PR; the same command gets the latest commit reviewed.
+- Repository admins can bypass the rules when merging a PR, for example during a CodeRabbit outage. Nobody can push straight to `main`, force-push it or delete it.
+
+To apply the ruleset: **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, pick `.github/rulesets/main.json`, check that the bypass list shows *Repository admin*, then **Create**. If you change the ruleset in Settings later, export it and update this file so the two stay in sync.
 
 ---
 

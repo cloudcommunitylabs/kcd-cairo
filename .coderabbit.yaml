@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit reviews every pull request. The main branch ruleset
+# (.github/rulesets/main.json) requires one approval, and CodeRabbit gives it.
+reviews:
+  profile: chill
+  # Request changes when CodeRabbit leaves inline comments, and approve once
+  # they are resolved, the latest commit has been reviewed and no pre-merge
+  # check is failing.
+  request_changes_workflow: true
+  # PR authors can't force an approval with "@coderabbitai approve" or
+  # "@coderabbitai resolve". Repository admins can bypass the ruleset instead.
+  allow_author_approval: false
