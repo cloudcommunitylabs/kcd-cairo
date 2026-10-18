@@ -192,12 +192,13 @@ The theme is **not loaded** by default because it needs a live OpenEvent summit 
 
 `main` is protected by the ruleset in `.github/rulesets/main.json`:
 
-- A PR needs one approval, every review conversation resolved, and the `deploy` check passing. Pushing new commits dismisses earlier approvals.
+- A PR needs one approval, every review conversation resolved, and the `deploy` and `CodeRabbit` checks passing. Pushing new commits dismisses earlier approvals.
 - CodeRabbit gives that approval (`request_changes_workflow` in `.coderabbit.yaml`). It requests changes when it leaves inline comments, and approves once they're resolved, the latest commit has been reviewed and no pre-merge check is failing. An approval doesn't merge anything; someone with write access still clicks Merge.
+- Requiring the `CodeRabbit` check means CodeRabbit has to finish reviewing the latest commit before anyone can merge, even if a person has already approved. If it requested changes, that blocks the merge until it approves or someone with write access dismisses its review.
 - PR authors can't force an approval with `@coderabbitai approve` (`allow_author_approval: false`). If CodeRabbit hasn't approved after its comments are resolved, comment `@coderabbitai review`. CodeRabbit also pauses after reviewing 5 commits on a PR; the same command gets the latest commit reviewed.
 - Repository admins can bypass the rules when merging a PR, for example during a CodeRabbit outage. Nobody can push straight to `main`, force-push it or delete it.
 
-To apply the ruleset: **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, pick `.github/rulesets/main.json`, check that the bypass list shows *Repository admin*, then **Create**. If you change the ruleset in Settings later, export it and update this file so the two stay in sync.
+To apply the ruleset: **Settings → Rules → Rulesets → New ruleset → Import a ruleset**, pick `.github/rulesets/main.json`, check that the bypass list shows *Repository admin*, then **Create**. If you change the ruleset in Settings later, export it and update this file so the two stay in sync. GitHub leaves the bypass list out of exported rulesets, so keep the `bypass_actors` entry from this file, and check the bypass list after every import.
 
 ---
 

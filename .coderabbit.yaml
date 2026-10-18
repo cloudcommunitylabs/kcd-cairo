@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 # CodeRabbit reviews every pull request. The main branch ruleset
-# (.github/rulesets/main.json) requires one approval, and CodeRabbit gives it.
+# (.github/rulesets/main.json) requires one approval, which CodeRabbit gives,
+# and requires CodeRabbit's status check.
 reviews:
   profile: chill
   # Request changes when CodeRabbit leaves inline comments, and approve once
